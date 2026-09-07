@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'auth_service.dart';
+import 'services/medicine_service.dart';
+import 'screens/inventory_screen.dart';
 
 // Supabase project credentials
 const String supabaseUrl = 'https://easjbvwjslirocrsobgt.supabase.co';
@@ -21,9 +23,14 @@ Future<void> main() async {
 }
 
 class CarePharmaApp extends StatelessWidget {
-  const CarePharmaApp({super.key, this.authService});
+  const CarePharmaApp({
+    super.key,
+    this.authService,
+    this.medicineService,
+  });
 
   final AuthService? authService;
+  final IMedicineService? medicineService;
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +43,7 @@ class CarePharmaApp extends StatelessWidget {
       ),
       home: RoleSelectionScreen(
         authService: authService ?? const AuthService(),
+        medicineService: medicineService,
       ),
     );
   }
@@ -46,9 +54,11 @@ class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({
     super.key,
     required this.authService,
+    this.medicineService,
   });
 
   final AuthService authService;
+  final IMedicineService? medicineService;
 
   @override
   Widget build(BuildContext context) {
@@ -116,6 +126,7 @@ class RoleSelectionScreen extends StatelessWidget {
                               builder: (_) => LoginScreen(
                                 role: 'User',
                                 authService: authService,
+                                medicineService: medicineService,
                               ),
                             ),
                           );
@@ -148,6 +159,7 @@ class RoleSelectionScreen extends StatelessWidget {
                               builder: (_) => LoginScreen(
                                 role: 'Pharmacist',
                                 authService: authService,
+                                medicineService: medicineService,
                               ),
                             ),
                           );
@@ -183,10 +195,12 @@ class LoginScreen extends StatefulWidget {
     super.key,
     required this.role,
     required this.authService,
+    this.medicineService,
   });
 
   final String role;
   final AuthService authService;
+  final IMedicineService? medicineService;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -266,16 +280,29 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (response != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => BlankSuccessScreen(
-              role: widget.role,
-              email: email,
-              authService: widget.authService,
+        if (widget.role == 'Pharmacist') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => InventoryScreen(
+                medicineService: widget.medicineService,
+                authService: widget.authService,
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => BlankSuccessScreen(
+                role: widget.role,
+                email: email,
+                authService: widget.authService,
+                medicineService: widget.medicineService,
+              ),
+            ),
+          );
+        }
       } else {
         setState(() {
           _errorMessage = 'Invalid OTP code. Please try again.';
@@ -575,11 +602,13 @@ class BlankSuccessScreen extends StatelessWidget {
     required this.role,
     required this.email,
     required this.authService,
+    this.medicineService,
   });
 
   final String role;
   final String email;
   final AuthService authService;
+  final IMedicineService? medicineService;
 
   @override
   Widget build(BuildContext context) {
@@ -600,7 +629,10 @@ class BlankSuccessScreen extends StatelessWidget {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => RoleSelectionScreen(authService: authService),
+                    builder: (_) => RoleSelectionScreen(
+                      authService: authService,
+                      medicineService: medicineService,
+                    ),
                   ),
                   (route) => false,
                 );
@@ -668,8 +700,10 @@ class BlankSuccessScreen extends StatelessWidget {
                             Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(
-                                builder: (_) =>
-                                    RoleSelectionScreen(authService: authService),
+                                builder: (_) => RoleSelectionScreen(
+                                  authService: authService,
+                                  medicineService: medicineService,
+                                ),
                               ),
                               (route) => false,
                             );

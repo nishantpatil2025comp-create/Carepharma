@@ -16,40 +16,65 @@ class AuthService {
     }
   }
 
-  /// Sends a 6-digit OTP code to the specified email address.
+  /// Sends a 6-digit OTP code to the specified email address using Supabase OTP sign-in.
   Future<void> sendOtpCode(String email) async {
     final client = _client;
     if (client != null) {
-      await client.auth.signInWithOtp(email: email.trim());
+      final cleanEmail = email.trim();
+      debugPrint('[AuthService] Sending OTP code to: $cleanEmail');
+      await client.auth.signInWithOtp(
+        email: cleanEmail,
+        shouldCreateUser: true,
+      );
     } else {
       debugPrint('[AuthService] Offline fallback: OTP simulated for $email');
     }
   }
 
-  /// Verifies the OTP code sent to the email address.
-  /// Uses OtpType.signup first, falling back to OtpType.email if needed.
+  /// Verifies the 6-digit OTP code sent to the email address.
   Future<AuthResponse?> verifyOtpCode(String email, String otpCode) async {
     final client = _client;
     if (client != null) {
+      final cleanEmail = email.trim();
+      final cleanToken = otpCode.trim();
+
+      // Attempt verification with OtpType.email (standard for signInWithOtp)
       try {
         final response = await client.auth.verifyOTP(
-          email: email.trim(),
-          token: otpCode.trim(),
+          email: cleanEmail,
+          token: cleanToken,
+          type: OtpType.email,
+        );
+        if (response.session != null) {
+          debugPrint('Email OTP verified successfully with OtpType.email');
+          return response;
+        }
+      } catch (e) {
+        debugPrint('OtpType.email attempt failed: $e, trying OtpType.signup');
+      }
+
+      // Fallback to OtpType.signup (if user was newly created during OTP)
+      try {
+        final response = await client.auth.verifyOTP(
+          email: cleanEmail,
+          token: cleanToken,
           type: OtpType.signup,
         );
         if (response.session != null) {
-          debugPrint('Email verified successfully with OtpType.signup');
+          debugPrint('Email OTP verified successfully with OtpType.signup');
+          return response;
         }
-        return response;
       } catch (e) {
-        debugPrint('Signup OTP verification attempt failed: $e, trying OtpType.email');
-        final response = await client.auth.verifyOTP(
-          email: email.trim(),
-          token: otpCode.trim(),
-          type: OtpType.email,
-        );
-        return response;
+        debugPrint('OtpType.signup attempt failed: $e, trying OtpType.magiclink');
       }
+
+      // Fallback to OtpType.magiclink
+      final response = await client.auth.verifyOTP(
+        email: cleanEmail,
+        token: cleanToken,
+        type: OtpType.magiclink,
+      );
+      return response;
     } else {
       // Fallback for tests
       return AuthResponse(
