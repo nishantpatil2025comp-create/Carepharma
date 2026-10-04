@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GeniMed - Upload Doctor's Prescription</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,700;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "primary-fixed": "#89f5e7",
+            "error-container": "#ffdad6",
+            "on-primary": "#ffffff",
+            "primary": "#00685f",
+            "surface-bright": "#f7f9fb",
+            "inverse-primary": "#6bd8cb",
+            "secondary-fixed-dim": "#4fdbc8",
+            "surface-container-lowest": "#ffffff",
+            "on-secondary-fixed": "#00201c",
+            "on-error-container": "#93000a",
+            "secondary-container": "#6df5e1",
+            "surface-container-high": "#e6e8ea",
+            "on-primary-container": "#f4fffc",
+            "surface-variant": "#e0e3e5",
+            "surface-container-highest": "#e0e3e5",
+            "primary-container": "#008378",
+            "primary-fixed-dim": "#6bd8cb",
+            "secondary-fixed": "#71f8e4",
+            "surface": "#f7f9fb",
+            "surface-dim": "#d8dadc",
+            "tertiary-fixed-dim": "#ffb59a",
+            "on-error": "#ffffff",
+            "background": "#f7f9fb",
+            "on-tertiary-container": "#fffbff",
+            "outline-variant": "#bcc9c6",
+            "tertiary-container": "#b05e3d",
+            "on-surface-variant": "#3d4947",
+            "inverse-surface": "#2d3133",
+            "surface-tint": "#006a61",
+            "on-background": "#191c1e",
+            "on-secondary-container": "#006f64",
+            "on-primary-fixed-variant": "#005049",
+            "secondary": "#006b5f",
+            "on-tertiary-fixed": "#370e00",
+            "on-primary-fixed": "#00201d",
+            "on-secondary-fixed-variant": "#005048",
+            "on-tertiary": "#ffffff",
+            "error": "#ba1a1a",
+            "outline": "#6d7a77",
+            "on-surface": "#191c1e",
+            "surface-container-low": "#f2f4f6",
+            "surface-container": "#eceef0",
+            "on-tertiary-fixed-variant": "#773215",
+            "tertiary": "#924628",
+            "inverse-on-surface": "#eff1f3",
+            "tertiary-fixed": "#ffdbce",
+            "on-secondary": "#ffffff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "column-span-6": "50.00%",
+            "gutter-md": "1.5rem",
+            "gutter-sm": "0.75rem",
+            "column-span-12": "100.00%",
+            "column-span-2": "16.66%",
+            "column-span-4": "33.33%",
+            "gutter-lg": "2rem",
+            "margin-screen": "1.5rem",
+            "column-span-1": "8.33%"
+          },
+          "fontFamily": {
+            "body-sm": ["Atkinson Hyperlegible Next"],
+            "headline-sm": ["Atkinson Hyperlegible Next"],
+            "label-md": ["Atkinson Hyperlegible Next"],
+            "label-lg": ["Atkinson Hyperlegible Next"],
+            "display-lg": ["Atkinson Hyperlegible Next"],
+            "body-md": ["Atkinson Hyperlegible Next"],
+            "headline-md": ["Atkinson Hyperlegible Next"],
+            "body-lg": ["Atkinson Hyperlegible Next"],
+            "headline-lg": ["Atkinson Hyperlegible Next"]
+          },
+          "fontSize": {
+            "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+            "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "label-lg": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "fontWeight": "700" }],
+            "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+            "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      font-family: 'Atkinson Hyperlegible Next', sans-serif;
+    }
+    .ambient-card {
+      box-shadow: 0 8px 24px -4px rgba(0, 104, 95, 0.08), 0 2px 6px -1px rgba(0, 104, 95, 0.04);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col justify-between selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- Main Mobile App Shell / Container -->
+<div class="w-full max-w-md mx-auto min-h-screen flex flex-col bg-surface shadow-2xl relative pb-28">
+<!-- Top App Bar (Task Flow: with Back, Title, and Info) -->
+<header class="sticky top-0 z-40 bg-surface/95 backdrop-blur-md px-4 py-3.5 flex items-center justify-between">
+<button aria-label="Go back" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface hover:bg-surface-variant transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+<div class="flex flex-col items-center">
+<h1 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Upload Prescription</h1>
+</div>
+<button aria-label="Help &amp; Guidance" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[22px]">help_outline</span>
+</button>
+</header>
+<!-- Sub-bar: Trust & Security Assurance Banner -->
+<div class="bg-secondary-container/30 px-4 py-2 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<span class="font-label-md text-body-sm text-on-secondary-container font-semibold tracking-normal text-center">
+        100% HIPAA Compliant • Verified by Pharmacists
+      </span>
+</div>
+<!-- Scrollable Content Area -->
+<main class="flex-1 px-4 pt-4 space-y-5">
+<!-- Upload Actions Bento Card -->
+<section class="bg-surface-container-lowest ambient-card rounded-xl p-4 border border-outline-variant/40">
+<div class="flex items-center justify-between mb-3">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-bold">New Prescription</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Upload clear doctor's slip or e-Rx</p>
+</div>
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-body-sm font-label-md bg-secondary-container text-on-secondary-container">
+<span class="material-symbols-outlined text-[16px] mr-1" style="font-variation-settings: 'FILL' 1;">eco</span>
+            Save up to 70%
+          </span>
+</div>
+<!-- Upload Action Buttons (Dual Pill / Card buttons) -->
+<div class="grid grid-cols-2 gap-3 mb-3.5">
+<button class="group flex flex-col items-center justify-center p-4 rounded-xl border border-primary/20 bg-surface hover:bg-primary-fixed/30 active:scale-[0.98] transition-all" type="button">
+<div class="w-12 h-12 rounded-full bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center text-primary mb-2 transition-colors">
+<span class="material-symbols-outlined text-[26px]">photo_camera</span>
+</div>
+<span class="font-label-lg text-label-lg text-primary font-bold">Take Photo</span>
+<span class="font-body-sm text-[12px] text-on-surface-variant mt-0.5">Instant camera scan</span>
+</button>
+<button class="group flex flex-col items-center justify-center p-4 rounded-xl border border-outline-variant/60 bg-surface hover:bg-surface-container transition-all active:scale-[0.98]" type="button">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface mb-2 group-hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[26px]">photo_library</span>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface font-bold">From Gallery</span>
+<span class="font-body-sm text-[12px] text-on-surface-variant mt-0.5">Upload image or PDF</span>
+</button>
+</div>
+<!-- Upload Rules / Validation Checklist Pills -->
+<div class="bg-surface-container-low rounded-lg p-2.5 flex items-center justify-between text-on-surface-variant font-body-sm text-[13px] border border-surface-container">
+<span class="inline-flex items-center">
+<span class="material-symbols-outlined text-primary text-[16px] mr-1">check_circle</span>
+            Doctor Stamp
+          </span>
+<span class="text-outline-variant">•</span>
+<span class="inline-flex items-center">
+<span class="material-symbols-outlined text-primary text-[16px] mr-1">check_circle</span>
+            Patient Name
+          </span>
+<span class="text-outline-variant">•</span>
+<span class="inline-flex items-center">
+<span class="material-symbols-outlined text-primary text-[16px] mr-1">check_circle</span>
+            Recent Date
+          </span>
+</div>
+<p class="font-body-sm text-[12px] text-outline text-center mt-2.5">
+          Supports JPG, PNG, PDF up to 10 MB
+        </p>
+</section>
+<!-- Active / Simulated Uploaded State Preview -->
+<section class="bg-surface-container-lowest ambient-card rounded-xl border-2 border-primary/20 p-4 relative overflow-hidden">
+<!-- Top Status Indicator -->
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center space-x-2">
+<span class="flex h-2.5 w-2.5 relative">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+</span>
+<span class="font-label-md text-label-md text-primary font-semibold">File Ready for Matching</span>
+</div>
+<span class="font-body-sm text-[12px] text-on-surface-variant">Uploaded just now</span>
+</div>
+<!-- File Document Preview Strip -->
+<div class="flex items-start gap-3.5 bg-surface-container-low p-3 rounded-lg border border-outline-variant/30">
+<div class="relative w-16 h-20 rounded-md overflow-hidden bg-surface-container-high flex-shrink-0 border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A clean top-down clinical view of a doctor's medical prescription paper document with a clinic letterhead, handwritten medication names, and a round teal medical stamp, illuminated by soft neutral clinical lighting with a soothing teal and white background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDT7NnTAD2mpIdPodnZODOjRHiIg6Gbgy-vr9hLIrHMIenlKJE7urdm5TmmDIM7hvlUVFt6zXKXCk8AOtL7FGUoryIu2_rC2XpTGKB2zqxr2873_2OvRkzE4A7PTCs9cZZszVLkG5lwHSNwR47xHRtXVqrdytq79p0fCOkT3ya8rjFZvgLfeSDmHGJHps72xXFxkyS2ACOJx1g8MSRwsXiHFXQN1-0GQH2yIy2ZtUMTNmTk9hPHutUC"/>
+<div class="absolute bottom-0 inset-x-0 bg-primary/80 backdrop-blur-xs py-0.5 text-center">
+<span class="text-[10px] font-bold text-on-primary tracking-wider uppercase">JPG</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<h4 class="font-label-md text-label-md text-on-surface truncate font-bold">Rx_Dr_Kulkarni_Nov.jpg</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-[13px] mt-0.5">1.8 MB • High Resolution</p>
+<div class="flex items-center gap-3 mt-2">
+<button class="inline-flex items-center text-body-sm text-[13px] font-semibold text-primary hover:text-primary-container">
+<span class="material-symbols-outlined text-[16px] mr-0.5">crop</span>
+                Re-take
+              </button>
+<span class="text-outline-variant">|</span>
+<button class="inline-flex items-center text-body-sm text-[13px] font-semibold text-error hover:text-on-error-container">
+<span class="material-symbols-outlined text-[16px] mr-0.5">delete_outline</span>
+                Remove
+              </button>
+</div>
+</div>
+</div>
+<!-- Pharmacist Review & SLA Promise Banner -->
+<div class="mt-3.5 bg-secondary-container/20 rounded-lg p-3 border border-secondary/20 flex items-start gap-2.5">
+<span class="material-symbols-outlined text-primary text-[22px] flex-shrink-0 mt-0.5" style="font-variation-settings: 'FILL' 1;">timer</span>
+<div class="space-y-0.5">
+<p class="font-label-md text-label-md text-on-secondary-container font-semibold">
+              Pharmacist Generic Match within 15 mins
+            </p>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-[13px]">
+              Our certified pharmacist partners will scan for certified generic equivalents to maximize your savings.
+            </p>
+</div>
+</div>
+<!-- Main Submission Action Button -->
+<button class="w-full mt-4 h-12 bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg rounded-xl flex items-center justify-center space-x-2 transition-all shadow-md active:scale-[0.99]" type="button">
+<span>Submit for Verification &amp; Generic Match</span>
+<span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+</section>
+<!-- Past Prescriptions Section -->
+<section class="space-y-3 pt-1">
+<div class="flex items-center justify-between">
+<div class="flex items-baseline space-x-2">
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">Past Prescriptions</h3>
+<span class="font-body-sm text-body-sm text-on-surface-variant font-medium">(3 saved)</span>
+</div>
+<button class="font-label-md text-body-sm text-primary font-semibold hover:underline flex items-center">
+<span>Filter</span>
+<span class="material-symbols-outlined text-[16px] ml-0.5">tune</span>
+</button>
+</div>
+<!-- List Cards -->
+<div class="space-y-3">
+<!-- Card 1: Verified & Matched with Generic Savings -->
+<div class="bg-surface-container-lowest ambient-card rounded-xl p-3.5 border border-outline-variant/30 flex flex-col space-y-3">
+<div class="flex items-start justify-between">
+<div class="flex items-start space-x-3">
+<div class="w-12 h-14 rounded-lg bg-surface-container overflow-hidden border border-outline-variant/40 flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A focused medical document macro photo displaying an official clinic letterhead and clear cardiology prescription medications on textured white paper under soft diffuse teal-tinted lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCihxD8rSDbkmO-Ce8LasxRkW4AvcziOVioWia4J_D_SIIoWYc5jOamAj16Qxl1HI3DOhOEsbfe7FjLDjzgBbT-XA6NpSt9X5sRuHCZzBEhvlnGtM1Lv_ytJX1CAUqBBmJ0hL-SI2fJNWNRZ8fMArEQ3FtXrPE0C74ybZHrKOiemi0Z_mMvXac5NrB03tCi5W2B_fGh6eTpcf6TBckRyxn1VJh1TQrS5_Tn0LSGHlYUxcdEAoD9mqdo"/>
+</div>
+<div>
+<h4 class="font-label-lg text-label-lg text-on-surface font-bold">Dr. Anita Kulkarni</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Cardiologist • 12 Oct 2024</p>
+</div>
+</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[12px] font-label-md bg-secondary-container text-on-secondary-container font-semibold">
+                Verified &amp; Matched
+              </span>
+</div>
+<div class="bg-surface-container-low rounded-lg p-2.5 flex items-center justify-between">
+<div class="flex items-center space-x-2">
+<span class="material-symbols-outlined text-primary text-[20px]">savings</span>
+<span class="font-body-sm text-body-sm font-semibold text-primary">Saved ₹340 with 3 generic switches</span>
+</div>
+<button class="h-8 px-3 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-md text-[13px] font-semibold transition-colors flex items-center">
+                Re-order
+              </button>
+</div>
+</div>
+<!-- Card 2: Fulfilled -->
+<div class="bg-surface-container-lowest ambient-card rounded-xl p-3.5 border border-outline-variant/30 flex items-center justify-between">
+<div class="flex items-start space-x-3">
+<div class="w-11 h-13 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant flex-shrink-0">
+<span class="material-symbols-outlined text-[24px]">description</span>
+</div>
+<div>
+<div class="flex items-center space-x-2">
+<h4 class="font-label-lg text-label-lg text-on-surface font-bold">Dr. Rajesh Sharma</h4>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-label-md bg-surface-variant text-on-surface-variant font-semibold">
+                    Fulfilled
+                  </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-[13px]">General Physician • 28 Sep 2024</p>
+<p class="font-body-sm text-body-sm text-on-surface mt-0.5 text-[13px]">Paracetamol + Cetirizine</p>
+</div>
+</div>
+<button aria-label="View Prescription" class="p-2 text-primary hover:bg-surface-variant rounded-full">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</div>
+<!-- Card 3: Expired -->
+<div class="bg-surface-container-lowest ambient-card rounded-xl p-3.5 border border-outline-variant/30 flex items-center justify-between opacity-80">
+<div class="flex items-start space-x-3">
+<div class="w-11 h-13 rounded-lg bg-surface-container-high flex items-center justify-center text-outline flex-shrink-0">
+<span class="material-symbols-outlined text-[24px]">schedule</span>
+</div>
+<div>
+<div class="flex items-center space-x-2">
+<h4 class="font-label-lg text-label-lg text-on-surface font-semibold">Dr. Meera Iyer</h4>
+<span class="inline-flex items-center px-2 py-0.2 rounded-full text-[11px] font-label-md border border-outline-variant text-outline">
+                    Expired
+                  </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-[13px]">Dermatologist • 15 Aug 2024</p>
+<p class="font-body-sm text-body-sm text-tertiary mt-0.5 text-[12px] flex items-center">
+<span class="material-symbols-outlined text-[14px] mr-1">info</span> Needs new consultation
+                </p>
+</div>
+</div>
+<button class="text-body-sm font-label-md text-primary hover:underline text-[13px] font-semibold px-2 py-1">
+              Consult
+            </button>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar (Mandated Shared Component) -->
+<!-- Executing style_* specifications from Shared Component JSON: style_separation_logic, style_shadows_and_elevation, style_active_navigation, style_inactive_navigation -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center py-2 bg-surface-container-lowest shadow-md max-w-md left-1/2 -translate-x-1/2">
+<!-- Nav Item 1: Home -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1.5 hover:bg-surface-variant transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[22px]">home</span>
+<span class="text-label-md font-label-md text-[12px] mt-0.5">Home</span>
+</a>
+<!-- Nav Item 2: Appointments (Active state mapped closest to medical workflow/prescriptions) -->
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-2xl px-3 py-1.5 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">calendar_today</span>
+<span class="text-label-md font-label-md text-[12px] mt-0.5">Appointments</span>
+</a>
+<!-- Nav Item 3: Messages -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1.5 hover:bg-surface-variant transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[22px]">chat</span>
+<span class="text-label-md font-label-md text-[12px] mt-0.5">Messages</span>
+</a>
+<!-- Nav Item 4: Profile -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1.5 hover:bg-surface-variant transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[22px]">person</span>
+<span class="text-label-md font-label-md text-[12px] mt-0.5">Profile</span>
+</a>
+</nav>
+</div>
+</body></html>

@@ -1,0 +1,422 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>GeniMed - Generic Medicine &amp; Pharmacy Delivery</title>
+<!-- Material Symbols Outlined font -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Atkinson Hyperlegible Next font for clinical precision and high legibility -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;family=Be+Vietnam+Pro:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS with Forms and Container Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "on-tertiary": "#ffffff",
+                  "on-secondary-fixed-variant": "#005048",
+                  "surface-dim": "#d8dadc",
+                  "on-secondary-fixed": "#00201c",
+                  "outline": "#6d7a77",
+                  "on-primary-fixed": "#00201d",
+                  "surface-container-lowest": "#ffffff",
+                  "surface-container-highest": "#e0e3e5",
+                  "on-surface-variant": "#3d4947",
+                  "secondary-fixed": "#71f8e4",
+                  "inverse-primary": "#6bd8cb",
+                  "tertiary": "#924628",
+                  "secondary": "#006b5f",
+                  "surface-container-low": "#f2f4f6",
+                  "error": "#ba1a1a",
+                  "inverse-on-surface": "#eff1f3",
+                  "surface-container-high": "#e6e8ea",
+                  "on-tertiary-fixed": "#370e00",
+                  "error-container": "#ffdad6",
+                  "on-error": "#ffffff",
+                  "on-tertiary-fixed-variant": "#773215",
+                  "secondary-container": "#6df5e1",
+                  "surface": "#f7f9fb",
+                  "tertiary-fixed-dim": "#ffb59a",
+                  "surface-variant": "#e0e3e5",
+                  "primary-fixed-dim": "#6bd8cb",
+                  "outline-variant": "#bcc9c6",
+                  "on-surface": "#191c1e",
+                  "surface-tint": "#006a61",
+                  "tertiary-fixed": "#ffdbce",
+                  "primary-container": "#008378",
+                  "on-background": "#191c1e",
+                  "secondary-fixed-dim": "#4fdbc8",
+                  "on-primary-fixed-variant": "#005049",
+                  "on-tertiary-container": "#fffbff",
+                  "surface-container": "#eceef0",
+                  "on-primary-container": "#f4fffc",
+                  "primary-fixed": "#89f5e7",
+                  "background": "#f7f9fb",
+                  "on-secondary": "#ffffff",
+                  "on-secondary-container": "#006f64",
+                  "on-error-container": "#93000a",
+                  "inverse-surface": "#2d3133",
+                  "primary": "#00685f",
+                  "surface-bright": "#f7f9fb",
+                  "tertiary-container": "#b05e3d",
+                  "on-primary": "#ffffff"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.25rem",
+                  "lg": "0.5rem",
+                  "xl": "0.75rem",
+                  "full": "9999px"
+          },
+          "fontFamily": {
+                  "headline-md": ["Atkinson Hyperlegible Next", "sans-serif"],
+                  "body-lg": ["Atkinson Hyperlegible Next", "sans-serif"],
+                  "label-lg": ["Atkinson Hyperlegible Next", "sans-serif"],
+                  "display-lg": ["Atkinson Hyperlegible Next", "sans-serif"],
+                  "body-md": ["Atkinson Hyperlegible Next", "sans-serif"],
+                  "body-sm": ["Atkinson Hyperlegible Next", "sans-serif"],
+                  "label-md": ["Atkinson Hyperlegible Next", "sans-serif"],
+                  "headline-lg": ["Atkinson Hyperlegible Next", "sans-serif"],
+                  "headline-sm": ["Atkinson Hyperlegible Next", "sans-serif"]
+          }
+        },
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    /* Hide scrollbars for clean mobile app display */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md antialiased flex justify-center min-h-screen">
+<!-- Mobile Screen Wrapper (App Frame) -->
+<div class="w-full max-w-md bg-background min-h-screen flex flex-col relative shadow-xl overflow-x-hidden pb-20">
+<!-- Top App Bar / Location Selector -->
+<header class="sticky top-0 z-30 bg-surface-container-lowest/90 backdrop-blur-md px-4 py-3 border-b border-surface-variant flex items-center justify-between transition-shadow duration-200">
+<div class="flex items-center gap-2 flex-1 cursor-pointer select-none">
+<div class="text-primary flex items-center justify-center p-2 rounded-full bg-secondary-fixed/20">
+<span class="material-symbols-outlined text-[20px]">location_on</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Deliver to</span>
+<div class="flex items-center gap-1">
+<h1 class="text-on-surface text-base font-bold font-headline-sm leading-tight truncate max-w-[200px]">Baner, Pune</h1>
+<span class="material-symbols-outlined text-outline text-[18px]">keyboard_arrow_down</span>
+</div>
+</div>
+</div>
+<!-- Cart Badge Icon Button -->
+<button aria-label="View Shopping Cart" class="relative flex items-center justify-center p-2 rounded-full text-on-surface hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[24px]">shopping_cart</span>
+<span class="absolute top-1.5 right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-on-primary">
+          2
+        </span>
+</button>
+</header>
+<!-- Search Section -->
+<div class="px-4 pt-3 pb-2">
+<div class="relative flex items-center w-full rounded-xl bg-surface-container-low border border-outline-variant/50 focus-within:border-primary focus-within:bg-surface-container-lowest transition-all shadow-sm">
+<div class="flex items-center pl-3.5 pointer-events-none text-primary">
+<span class="material-symbols-outlined text-[22px]">search</span>
+</div>
+<input class="w-full bg-transparent border-none text-on-surface placeholder:text-on-surface-variant text-sm py-3 pl-2.5 pr-10 focus:ring-0 focus:outline-none" placeholder="Search for medicine, e.g. Crocin, Dolo 650" type="text">
+<div class="absolute right-3 flex items-center gap-1">
+<button class="text-primary hover:text-on-surface p-0.5 rounded" title="Voice Search">
+<span class="material-symbols-outlined text-[20px]">mic</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Quick Emergency / Pill Reminder Micro-Banner -->
+<div class="px-4 py-1.5">
+<div class="flex items-center justify-between px-3 py-1.5 bg-secondary-fixed/25 rounded-lg border border-secondary-fixed text-on-secondary-fixed text-xs font-medium">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-secondary font-semibold" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="">100% Genuine &amp; CDSCO Certified Generics</span>
+</div>
+<span class="font-bold text-secondary text-[11px] cursor-pointer">Learn ›</span>
+</div>
+</div>
+<!-- Prominent Hero Banner: Generic Savings -->
+<div class="px-4 pt-2 pb-3">
+<div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary-container to-secondary p-5 text-on-primary shadow-md">
+<!-- Subtle decorative teal geometry -->
+<div class="absolute -right-8 -bottom-8 w-36 h-36 rounded-full bg-secondary-fixed/10 pointer-events-none blur-xl"></div>
+<div class="absolute top-2 right-4 opacity-15 pointer-events-none">
+<span class="material-symbols-outlined text-[100px] leading-none">medication</span>
+</div>
+<div class="relative z-10 flex flex-col gap-2">
+<div class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-xs font-bold w-max uppercase tracking-wider">
+<span class="material-symbols-outlined text-[14px]">savings</span>
+            GENIMED SAVINGS
+          </div>
+<h2 class="text-xl font-bold font-headline-md tracking-tight leading-snug max-w-[260px]">
+            Save up to 60% with generic alternatives
+          </h2>
+<p class="text-on-primary-container text-xs leading-relaxed max-w-[270px]">
+            Switch to high-quality bio-equivalent generics and cut down your monthly recurring pharmacy bills drastically.
+          </p>
+<div class="pt-1">
+<button class="inline-flex items-center gap-1.5 px-4 py-2 bg-surface-container-lowest text-primary rounded-xl text-xs font-bold tracking-wide shadow-sm hover:bg-surface transition-all active:scale-95">
+<span class="">Compare Now</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Upload Prescription Card -->
+<div class="px-4 py-2">
+<div class="rounded-2xl border-2 border-dashed border-outline-variant bg-surface-container-lowest p-4 transition-all hover:border-primary">
+<div class="flex items-center justify-between gap-3">
+<div class="flex items-center gap-3">
+<div class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-secondary-fixed/30 text-primary">
+<span class="material-symbols-outlined text-[26px]">photo_camera</span>
+</div>
+<div class="flex flex-col">
+<h3 class="text-sm font-bold text-on-surface font-headline-sm">Upload Prescription</h3>
+<p class="text-xs text-on-surface-variant leading-tight mt-0.5">Let our licensed pharmacists verify &amp; arrange your generics</p>
+</div>
+</div>
+<button class="shrink-0 flex items-center justify-center px-3.5 py-2 rounded-xl bg-secondary text-on-secondary text-xs font-bold shadow-sm hover:bg-primary transition-all">
+            Upload Now
+          </button>
+</div>
+</div>
+</div>
+<!-- Popular Categories Section -->
+<div class="pt-4 pb-2">
+<div class="flex items-center justify-between px-4 mb-3">
+<h2 class="text-base font-bold font-headline-sm text-on-surface">Popular Categories</h2>
+<a class="text-xs font-bold text-primary hover:underline" href="#">View all</a>
+</div>
+<!-- Horizontal Scrollable Chips / Category Cards -->
+<div class="flex gap-3 overflow-x-auto px-4 no-scrollbar pb-1">
+<!-- Category 1: Pain Relief -->
+<div class="flex flex-col items-center gap-1.5 min-w-[72px] cursor-pointer group">
+<div class="size-14 rounded-2xl bg-surface-container-low flex items-center justify-center text-primary border border-surface-variant group-hover:bg-secondary-fixed/20 transition-all">
+<span class="material-symbols-outlined text-[28px]">healing</span>
+</div>
+<span class="text-xs font-medium text-on-surface text-center leading-tight">Pain Relief</span>
+</div>
+<!-- Category 2: Diabetes -->
+<div class="flex flex-col items-center gap-1.5 min-w-[72px] cursor-pointer group">
+<div class="size-14 rounded-2xl bg-surface-container-low flex items-center justify-center text-primary border border-surface-variant group-hover:bg-secondary-fixed/20 transition-all">
+<span class="material-symbols-outlined text-[28px]">bloodtype</span>
+</div>
+<span class="text-xs font-medium text-on-surface text-center leading-tight">Diabetes</span>
+</div>
+<!-- Category 3: Fever -->
+<div class="flex flex-col items-center gap-1.5 min-w-[72px] cursor-pointer group">
+<div class="size-14 rounded-2xl bg-surface-container-low flex items-center justify-center text-primary border border-surface-variant group-hover:bg-secondary-fixed/20 transition-all">
+<span class="material-symbols-outlined text-[28px]">thermostat</span>
+</div>
+<span class="text-xs font-medium text-on-surface text-center leading-tight">Fever</span>
+</div>
+<!-- Category 4: Skin Care -->
+<div class="flex flex-col items-center gap-1.5 min-w-[72px] cursor-pointer group">
+<div class="size-14 rounded-2xl bg-surface-container-low flex items-center justify-center text-primary border border-surface-variant group-hover:bg-secondary-fixed/20 transition-all">
+<span class="material-symbols-outlined text-[28px]">spa</span>
+</div>
+<span class="text-xs font-medium text-on-surface text-center leading-tight">Skin Care</span>
+</div>
+<!-- Category 5: Cardiac -->
+<div class="flex flex-col items-center gap-1.5 min-w-[72px] cursor-pointer group">
+<div class="size-14 rounded-2xl bg-surface-container-low flex items-center justify-center text-primary border border-surface-variant group-hover:bg-secondary-fixed/20 transition-all">
+<span class="material-symbols-outlined text-[28px]">cardiology</span>
+</div>
+<span class="text-xs font-medium text-on-surface text-center leading-tight">Cardiac</span>
+</div>
+<!-- Category 6: Stomach Care -->
+<div class="flex flex-col items-center gap-1.5 min-w-[72px] cursor-pointer group">
+<div class="size-14 rounded-2xl bg-surface-container-low flex items-center justify-center text-primary border border-surface-variant group-hover:bg-secondary-fixed/20 transition-all">
+<span class="material-symbols-outlined text-[28px]">gastroenterology</span>
+</div>
+<span class="text-xs font-medium text-on-surface text-center leading-tight">Stomach</span>
+</div>
+</div>
+</div>
+<!-- Pharmacies Near You Section -->
+<div class="pt-4 pb-4">
+<div class="flex items-center justify-between px-4 mb-3">
+<div>
+<h2 class="text-base font-bold font-headline-sm text-on-surface">Pharmacies Near You</h2>
+<p class="text-xs text-on-surface-variant">Verified generic fulfillment partners</p>
+</div>
+<div class="flex items-center gap-2.5"><a class="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline" href="#"><span class="material-symbols-outlined text-[16px]">map</span><span class="">View all on map</span></a><span class="text-outline-variant text-xs">•</span><a class="text-xs font-bold text-primary hover:underline" href="#">See nearby</a></div>
+</div>
+<!-- Horizontal Carousel of Verified Pharmacies -->
+<div class="flex gap-3.5 overflow-x-auto px-4 no-scrollbar pb-2">
+<!-- Pharmacy Card 1 -->
+<div class="min-w-[260px] bg-surface-container-lowest rounded-2xl border border-surface-variant shadow-sm overflow-hidden flex flex-col justify-between p-3.5 hover:shadow-md transition-shadow">
+<div>
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-1.5">
+<h3 class="text-sm font-bold text-on-surface font-headline-sm">HealthPlus Pharmacy</h3>
+<span class="material-symbols-outlined text-primary text-[18px]" style="font-variation-settings: 'FILL' 1;" title="Verified Pharmacy Partner">verified</span>
+</div>
+</div>
+<div class="flex items-center gap-2 mt-1.5 text-xs text-on-surface-variant">
+<span class="inline-flex items-center gap-0.5 text-tertiary font-semibold">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                4.8
+              </span>
+<span class="">•</span>
+<span class="">120+ reviews</span>
+<span class="">•</span>
+<span class="">1.2 km away</span>
+</div>
+<div class="mt-2.5 flex items-center gap-1.5">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-fixed/20 text-on-secondary-fixed text-[11px] font-semibold">
+<span class="material-symbols-outlined text-[13px]">bolt</span>
+                Delivers in 35 mins
+              </span>
+</div>
+</div>
+<div class="mt-3 pt-2.5 border-t border-surface-variant flex items-center justify-between text-xs">
+<span class="text-on-surface-variant">Generic substitution: <strong class="text-secondary">Supported</strong></span>
+<span class="text-primary font-bold cursor-pointer">Visit ›</span>
+</div>
+</div>
+<!-- Pharmacy Card 2 -->
+<div class="min-w-[260px] bg-surface-container-lowest rounded-2xl border border-surface-variant shadow-sm overflow-hidden flex flex-col justify-between p-3.5 hover:shadow-md transition-shadow">
+<div>
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-1.5">
+<h3 class="text-sm font-bold text-on-surface font-headline-sm">MedLife Generic Care</h3>
+<span class="material-symbols-outlined text-primary text-[18px]" style="font-variation-settings: 'FILL' 1;" title="Verified Pharmacy Partner">verified</span>
+</div>
+</div>
+<div class="flex items-center gap-2 mt-1.5 text-xs text-on-surface-variant">
+<span class="inline-flex items-center gap-0.5 text-tertiary font-semibold">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                4.9
+              </span>
+<span class="">•</span>
+<span class="">340+ reviews</span>
+<span class="">•</span>
+<span class="">0.8 km away</span>
+</div>
+<div class="mt-2.5 flex items-center gap-1.5">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-fixed/20 text-on-secondary-fixed text-[11px] font-semibold">
+<span class="material-symbols-outlined text-[13px]">bolt</span>
+                Delivers in 25 mins
+              </span>
+</div>
+</div>
+<div class="mt-3 pt-2.5 border-t border-surface-variant flex items-center justify-between text-xs">
+<span class="text-on-surface-variant">Generic substitution: <strong class="text-secondary">Supported</strong></span>
+<span class="text-primary font-bold cursor-pointer">Visit ›</span>
+</div>
+</div>
+<!-- Pharmacy Card 3 -->
+<div class="min-w-[260px] bg-surface-container-lowest rounded-2xl border border-surface-variant shadow-sm overflow-hidden flex flex-col justify-between p-3.5 hover:shadow-md transition-shadow">
+<div>
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-1.5">
+<h3 class="text-sm font-bold text-on-surface font-headline-sm">Apollo Jan Aushadhi</h3>
+<span class="material-symbols-outlined text-primary text-[18px]" style="font-variation-settings: 'FILL' 1;" title="Verified Pharmacy Partner">verified</span>
+</div>
+</div>
+<div class="flex items-center gap-2 mt-1.5 text-xs text-on-surface-variant">
+<span class="inline-flex items-center gap-0.5 text-tertiary font-semibold">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                4.7
+              </span>
+<span class="">•</span>
+<span class="">85 reviews</span>
+<span class="">•</span>
+<span class="">2.4 km away</span>
+</div>
+<div class="mt-2.5 flex items-center gap-1.5">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-fixed/20 text-on-secondary-fixed text-[11px] font-semibold">
+<span class="material-symbols-outlined text-[13px]">schedule</span>
+                Delivers in 45 mins
+              </span>
+</div>
+</div>
+<div class="mt-3 pt-2.5 border-t border-surface-variant flex items-center justify-between text-xs">
+<span class="text-on-surface-variant">Generic substitution: <strong class="text-secondary">Supported</strong></span>
+<span class="text-primary font-bold cursor-pointer">Visit ›</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Price Comparison Teaser Section -->
+<div class="px-4 pt-1 pb-4">
+<div class="bg-surface-container-lowest rounded-2xl p-4 border border-surface-variant">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">compare_arrows</span>
+<span class="text-xs font-bold text-on-surface uppercase tracking-wider">Example Generic Switch</span>
+</div>
+<span class="text-[11px] bg-secondary-fixed/40 text-on-secondary-fixed px-2 py-0.5 rounded font-bold">SAVE 64%</span>
+</div>
+<div class="grid grid-cols-2 gap-3 divide-x divide-surface-variant text-xs">
+<div>
+<p class="text-on-surface-variant text-[11px]">Brand Name</p>
+<p class="font-bold text-on-surface text-sm">Augmentin 625 Duo</p>
+<p class="text-outline text-xs mt-1">₹204.50 <span class="text-[10px]">/ 10 tabs</span></p>
+</div>
+<div class="pl-3">
+<p class="text-secondary font-semibold text-[11px]">Generic Substitute</p>
+<p class="font-bold text-primary text-sm">Amoxyclav 625 IP</p>
+<p class="text-primary font-bold text-xs mt-1">₹73.60 <span class="text-[10px] text-on-surface-variant">/ 10 tabs</span></p>
+</div>
+</div>
+</div>
+</div>
+<!-- Fixed Bottom Navigation Bar (Shared Component matching specification) -->
+<nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-40 border-t border-[#e7f3f2] bg-[#f8fcfb] px-4 pb-3 pt-2 flex gap-2" style="font-family: &quot;Be Vietnam Pro&quot;, &quot;Noto Sans&quot;, sans-serif;">
+<a class="just flex flex-1 flex-col items-center justify-end gap-1 rounded-full text-[#0d1b1a]" href="#">
+<div class="text-[#0d1b1a] flex h-8 items-center justify-center" data-icon="House" data-size="24px" data-weight="fill">
+<svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg">
+<path d="M224,115.55V208a16,16,0,0,1-16,16H168a16,16,0,0,1-16-16V168a8,8,0,0,0-8-8H112a8,8,0,0,0-8,8v40a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V115.55a16,16,0,0,1,5.17-11.78l80-75.48.11-.11a16,16,0,0,1,21.53,0,1.14,1.14,0,0,0,.11.11l80,75.48A16,16,0,0,1,224,115.55Z"></path>
+</svg>
+</div>
+<p class="text-[#0d1b1a] text-xs font-medium leading-normal tracking-[0.015em]">Home</p>
+</a>
+<a class="just flex flex-1 flex-col items-center justify-end gap-1 text-[#4c9a93]" href="#">
+<div class="text-[#4c9a93] flex h-8 items-center justify-center" data-icon="MagnifyingGlass" data-size="24px" data-weight="regular">
+<svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg">
+<path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path>
+</svg>
+</div>
+<p class="text-[#4c9a93] text-xs font-medium leading-normal tracking-[0.015em]">Search</p>
+</a>
+<a class="just flex flex-1 flex-col items-center justify-end gap-1 text-[#4c9a93]" href="#">
+<div class="text-[#4c9a93] flex h-8 items-center justify-center" data-icon="ClipboardText" data-size="24px" data-weight="regular">
+<svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg">
+<path d="M168,152a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,152Zm-8-40H96a8,8,0,0,0,0,16h64a8,8,0,0,0,0-16Zm56-64V216a16,16,0,0,1-16,16H56a16,16,0,0,1-16-16V48A16,16,0,0,1,56,32H92.26a47.92,47.92,0,0,1,71.48,0H200A16,16,0,0,1,216,48ZM96,64h64a32,32,0,0,0-64,0ZM200,48H173.25A47.93,47.93,0,0,1,176,64v8a8,8,0,0,1-8,8H88a8,8,0,0,1-8-8V64a47.93,47.93,0,0,1,2.75-16H56V216H200Z"></path>
+</svg>
+</div>
+<p class="text-[#4c9a93] text-xs font-medium leading-normal tracking-[0.015em]">Orders</p>
+</a>
+<a class="just flex flex-1 flex-col items-center justify-end gap-1 text-[#4c9a93]" href="#">
+<div class="text-[#4c9a93] flex h-8 items-center justify-center" data-icon="User" data-size="24px" data-weight="regular">
+<svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg">
+<path d="M230.92,212c-15.23-26.33-38.7-45.21-66.09-54.16a72,72,0,1,0-73.66,0C63.78,166.78,40.31,185.66,25.08,212a8,8,0,1,0,13.85,8c18.84-32.56,52.14-52,89.07-52s70.23,19.44,89.07,52a8,8,0,1,0,13.85-8ZM72,96a56,56,0,1,1,56,56A56.06,56.06,0,0,1,72,96Z"></path>
+</svg>
+</div>
+<p class="text-[#4c9a93] text-xs font-medium leading-normal tracking-[0.015em]">Profile</p>
+</a>
+</nav>
+</div>
+
+
+</body></html>

@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MediCare Generic Hub - Inventory &amp; Stock Control</title>
+<!-- Atkinson Hyperlegible Next via Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN with forms and container-queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-error-container": "#93000a",
+            "secondary-container": "#6df5e1",
+            "surface": "#f7f9fb",
+            "tertiary-fixed-dim": "#ffb59a",
+            "on-tertiary-fixed": "#370e00",
+            "on-primary-fixed": "#00201d",
+            "error": "#ba1a1a",
+            "on-secondary-container": "#006f64",
+            "inverse-on-surface": "#eff1f3",
+            "surface-container-highest": "#e0e3e5",
+            "secondary-fixed-dim": "#4fdbc8",
+            "primary-container": "#008378",
+            "on-primary-container": "#f4fffc",
+            "surface-dim": "#d8dadc",
+            "on-background": "#191c1e",
+            "on-surface-variant": "#3d4947",
+            "on-tertiary": "#ffffff",
+            "on-secondary": "#ffffff",
+            "surface-container-low": "#f2f4f6",
+            "primary": "#00685f",
+            "on-secondary-fixed": "#00201c",
+            "outline-variant": "#bcc9c6",
+            "surface-container": "#eceef0",
+            "surface-variant": "#e0e3e5",
+            "on-tertiary-container": "#fffbff",
+            "on-primary-fixed-variant": "#005049",
+            "secondary": "#006b5f",
+            "tertiary-container": "#b05e3d",
+            "primary-fixed": "#89f5e7",
+            "primary-fixed-dim": "#6bd8cb",
+            "on-surface": "#191c1e",
+            "on-primary": "#ffffff",
+            "on-secondary-fixed-variant": "#005048",
+            "tertiary-fixed": "#ffdbce",
+            "on-error": "#ffffff",
+            "tertiary": "#924628",
+            "outline": "#6d7a77",
+            "surface-bright": "#f7f9fb",
+            "inverse-surface": "#2d3133",
+            "background": "#f7f9fb",
+            "surface-container-high": "#e6e8ea",
+            "inverse-primary": "#6bd8cb",
+            "surface-container-lowest": "#ffffff",
+            "secondary-fixed": "#71f8e4",
+            "error-container": "#ffdad6",
+            "surface-tint": "#006a61",
+            "on-tertiary-fixed-variant": "#773215"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "column-span-1": "8.33%",
+            "column-span-12": "100.00%",
+            "gutter-md": "1.5rem",
+            "gutter-lg": "2rem",
+            "column-span-4": "33.33%",
+            "column-span-2": "16.66%",
+            "column-span-6": "50.00%",
+            "margin-screen": "1.5rem",
+            "gutter-sm": "0.75rem"
+          },
+          "fontFamily": {
+            "body-md": ["Atkinson Hyperlegible Next"],
+            "label-md": ["Atkinson Hyperlegible Next"],
+            "headline-lg": ["Atkinson Hyperlegible Next"],
+            "body-sm": ["Atkinson Hyperlegible Next"],
+            "label-lg": ["Atkinson Hyperlegible Next"],
+            "headline-sm": ["Atkinson Hyperlegible Next"],
+            "headline-md": ["Atkinson Hyperlegible Next"],
+            "body-lg": ["Atkinson Hyperlegible Next"],
+            "display-lg": ["Atkinson Hyperlegible Next"]
+          },
+          "fontSize": {
+            "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+            "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "label-lg": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+            "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+            "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "fontWeight": "700" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      line-height: 1;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f2f4f6;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #bcc9c6;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex flex-col antialiased">
+<!-- ========================================================================= -->
+<!-- 1. LEFT NAVIGATION SIDEBAR (Shared Component: SideNavBar)                 -->
+<!-- ========================================================================= -->
+<aside class="fixed top-0 left-0 h-screen w-64 flex flex-col justify-between bg-surface-container-lowest dark:bg-inverse-surface shadow-sm z-40 border-r border-surface-container">
+<!-- Top Header & Store Info -->
+<div>
+<div class="p-5 border-b border-surface-container-low flex items-start gap-3">
+<div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined" data-icon="local_pharmacy">local_pharmacy</span>
+</div>
+<div class="flex-1 min-w-0">
+<h2 class="text-label-lg font-label-lg font-bold text-primary truncate leading-tight">Apollo Meds &amp; Wellness</h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant truncate text-xs mt-0.5">Lic: MH-PUN-2024-8891</p>
+</div>
+</div>
+<!-- Store Status Toggle Banner -->
+<div class="px-4 py-3 bg-surface-container-low mx-3 my-3 rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="relative flex h-2.5 w-2.5">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+</span>
+<span class="text-label-md font-label-md text-on-surface font-semibold text-xs">Accepting Orders</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-8 h-4 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-surface-container-lowest after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<!-- Navigation Links -->
+<nav class="mt-2 space-y-1 px-2">
+<!-- 1. Dashboard -->
+<a class="text-on-surface-variant dark:text-outline-variant font-label-lg px-4 py-3 flex items-center justify-between hover:text-on-surface hover:bg-surface-container-lowest dark:hover:bg-surface-container rounded-lg transition-colors duration-150" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[20px]" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</div>
+</a>
+<!-- 2. Orders -->
+<a class="text-on-surface-variant dark:text-outline-variant font-label-lg px-4 py-3 flex items-center justify-between hover:text-on-surface hover:bg-surface-container-lowest dark:hover:bg-surface-container rounded-lg transition-colors duration-150" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[20px]" data-icon="receipt_long">receipt_long</span>
+<span>Orders</span>
+</div>
+<span class="px-2 py-0.5 bg-secondary-container text-on-secondary-container rounded-full text-xs font-label-md font-bold">5 New</span>
+</a>
+<!-- 3. Inventory (ACTIVE) -->
+<a class="text-primary dark:text-inverse-primary font-label-lg font-bold border-l-4 border-primary dark:border-inverse-primary bg-surface-container-low dark:bg-surface-container px-4 py-3 flex items-center justify-between rounded-r-lg" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[20px]" data-icon="inventory_2">inventory_2</span>
+<span>Inventory</span>
+</div>
+<span class="px-2 py-0.5 bg-tertiary-fixed text-on-tertiary-fixed rounded-full text-xs font-label-md font-bold">3 Low</span>
+</a>
+<!-- 4. Delivery -->
+<a class="text-on-surface-variant dark:text-outline-variant font-label-lg px-4 py-3 flex items-center justify-between hover:text-on-surface hover:bg-surface-container-lowest dark:hover:bg-surface-container rounded-lg transition-colors duration-150" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[20px]" data-icon="local_shipping">local_shipping</span>
+<span>Delivery</span>
+</div>
+<span class="px-2 py-0.5 bg-surface-container-high text-on-surface-variant rounded-full text-xs font-label-md">4 Active</span>
+</a>
+<!-- 5. Earnings -->
+<a class="text-on-surface-variant dark:text-outline-variant font-label-lg px-4 py-3 flex items-center gap-3 hover:text-on-surface hover:bg-surface-container-lowest dark:hover:bg-surface-container rounded-lg transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="payments">payments</span>
+<span>Earnings</span>
+</a>
+<!-- 6. Settings -->
+<a class="text-on-surface-variant dark:text-outline-variant font-label-lg px-4 py-3 flex items-center gap-3 hover:text-on-surface hover:bg-surface-container-lowest dark:hover:bg-surface-container rounded-lg transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+</div>
+<!-- Sidebar Footer -->
+<div class="p-3 border-t border-surface-container-low space-y-1">
+<div class="px-4 py-2.5 bg-surface-container-low rounded-lg mb-2">
+<p class="text-xs text-on-surface-variant font-body-sm flex items-center gap-1.5 font-medium">
+<span class="material-symbols-outlined text-primary text-[16px]" data-icon="headset_mic">headset_mic</span>
+          Pharmacist Helpline
+        </p>
+<p class="text-label-md font-label-md text-on-surface font-bold text-xs mt-0.5">1800-420-9900</p>
+</div>
+<a class="text-on-surface-variant dark:text-outline-variant font-label-lg px-4 py-2.5 flex items-center gap-3 hover:text-on-surface hover:bg-surface-container-low rounded-lg transition-colors duration-150 text-sm" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="help">help</span>
+<span>Help &amp; Support</span>
+</a>
+<a class="text-error font-label-lg px-4 py-2.5 flex items-center gap-3 hover:bg-error-container/20 rounded-lg transition-colors duration-150 text-sm" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="logout">logout</span>
+<span>Log Out</span>
+</a>
+</div>
+</aside>
+<!-- ========================================================================= -->
+<!-- 2. TOP NAVBAR (Shared Component: TopNavBar)                               -->
+<!-- ========================================================================= -->
+<header class="flex justify-between items-center w-full px-8 py-3.5 ml-64 max-w-[calc(100%-16rem)] sticky top-0 z-30 bg-surface-container-lowest dark:bg-inverse-surface shadow-sm border-b border-surface-container">
+<!-- Breadcrumb & Global Search on Left -->
+<div class="flex items-center gap-6 flex-1 max-w-2xl">
+<div class="flex items-center gap-2 text-on-surface-variant text-label-md font-label-md whitespace-nowrap">
+<span class="hover:text-primary cursor-pointer">Inventory Management</span>
+<span class="material-symbols-outlined text-[16px] text-outline" data-icon="chevron_right">chevron_right</span>
+<span class="text-primary font-bold">Generic Stock Catalog</span>
+</div>
+<!-- Quick Global Search Input -->
+<div class="relative w-full max-w-sm hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]" data-icon="search">search</span>
+<input class="w-full pl-9 pr-3 py-1.5 text-sm bg-surface-container-low border border-outline-variant/60 rounded-lg focus:outline-none focus:border-primary focus:bg-surface-container-lowest text-on-surface transition-all placeholder:text-outline" placeholder="Quick search batch #, salt..." type="text"/>
+</div>
+</div>
+<!-- Trailing Metrics Badges & Pharmacist Profile -->
+<div class="flex items-center gap-4">
+<!-- Quick Stats Indicators -->
+<div class="hidden xl:flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-lg border border-surface-container">
+<div class="flex items-center gap-1.5 px-2 py-0.5">
+<span class="text-xs text-on-surface-variant font-body-sm">Total SKUs:</span>
+<span class="text-xs font-bold text-on-surface font-label-md">342</span>
+</div>
+<div class="h-3 w-px bg-outline-variant"></div>
+<div class="flex items-center gap-1.5 px-2 py-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span class="text-xs text-on-surface-variant font-body-sm">Low Stock:</span>
+<span class="text-xs font-bold text-tertiary font-label-md">7</span>
+</div>
+<div class="h-3 w-px bg-outline-variant"></div>
+<div class="flex items-center gap-1.5 px-2 py-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span class="text-xs text-on-surface-variant font-body-sm">Active Generics:</span>
+<span class="text-xs font-bold text-primary font-label-md">318</span>
+</div>
+</div>
+<!-- Branch Badge & Store Status -->
+<div class="hidden md:flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-lg text-xs font-label-md text-on-surface">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="store">store</span>
+<span class="font-medium">Main Branch (Central Pune)</span>
+</div>
+<!-- Notifications -->
+<button class="relative p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-lg transition-colors">
+<span class="material-symbols-outlined text-[22px]" data-icon="notifications">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full ring-2 ring-surface-container-lowest"></span>
+</button>
+<!-- User Avatar / Profile Pill -->
+<div class="flex items-center gap-3 pl-2 border-l border-surface-container">
+<div class="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-sm">
+          AK
+        </div>
+<div class="hidden lg:block text-left">
+<h4 class="text-xs font-bold font-label-md text-on-surface leading-tight">Dr. Anand Kulkarni</h4>
+<span class="text-[11px] text-on-surface-variant font-body-sm">Pharm.D • In-Charge</span>
+</div>
+</div>
+</div>
+</header>
+<!-- ========================================================================= -->
+<!-- MAIN WORKSPACE CONTAINER                                                  -->
+<!-- ========================================================================= -->
+<main class="ml-64 p-8 max-w-[calc(100%-16rem)] flex-1">
+<!-- 3. INVENTORY HEADER & ACTION CONTROLS -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+<div>
+<div class="flex items-center gap-2.5">
+<h1 class="text-headline-md font-headline-md font-bold text-on-surface">Generic Medicine Inventory &amp; Stock Control</h1>
+<span class="px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-xs font-label-md font-bold">
+            CDSCO Verified Hub
+          </span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-1">
+          Manage stock levels, automated generic substitution mapping, and CDSCO compliant batch pricing.
+        </p>
+</div>
+<!-- Action Buttons -->
+<div class="flex items-center flex-wrap gap-2.5">
+<button class="px-3.5 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-on-surface hover:bg-surface-container-low font-label-md text-xs font-semibold flex items-center gap-2 transition-all shadow-sm">
+<span class="material-symbols-outlined text-[18px] text-outline" data-icon="upload_file">upload_file</span>
+<span>Bulk CSV Upload</span>
+</button>
+<button class="px-3.5 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-on-surface hover:bg-surface-container-low font-label-md text-xs font-semibold flex items-center gap-2 transition-all shadow-sm">
+<span class="material-symbols-outlined text-[18px] text-outline" data-icon="download">download</span>
+<span>Export Stock Report</span>
+</button>
+<!-- Primary CTA to trigger Modal -->
+<button class="px-4 py-2.5 bg-primary text-on-primary rounded-lg font-label-md text-xs font-bold flex items-center gap-2 hover:bg-primary-container shadow-sm hover:shadow-md transition-all active:scale-[0.98]" onclick="document.getElementById('addMedicineModal').classList.remove('hidden')">
+<span class="material-symbols-outlined text-[18px]" data-icon="add_circle">add_circle</span>
+<span>+ Add New Medicine</span>
+</button>
+</div>
+</div>
+<!-- 4. SEARCH, CATEGORY & QUICK FILTER CONTROLS -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-surface-container mb-6 space-y-3.5">
+<div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+<!-- Search Input with High-Affordance Icon -->
+<div class="md:col-span-5 relative">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline text-[20px]" data-icon="search">search</span>
+<input class="w-full pl-10 pr-4 py-2.5 bg-surface-container-low/80 border border-outline-variant/60 rounded-lg text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:bg-surface-container-lowest transition-all" placeholder="Search by brand name, generic salt (e.g. Paracetamol, Amoxicillin), or batch number..." type="text"/>
+</div>
+<!-- Therapeutic Category Dropdown -->
+<div class="md:col-span-3">
+<div class="relative">
+<select class="w-full pl-3 pr-8 py-2.5 bg-surface-container-low/80 border border-outline-variant/60 rounded-lg text-sm text-on-surface font-label-md appearance-none focus:outline-none focus:border-primary focus:bg-surface-container-lowest cursor-pointer">
+<option value="">Therapeutic Category: All</option>
+<option value="antibiotics">Antibiotics &amp; Antimicrobial</option>
+<option value="antidiabetic">Antidiabetic / Glycemic Care</option>
+<option value="analgesics">Analgesics &amp; Antipyretics</option>
+<option value="cardiac">Cardiac &amp; Antihypertensive</option>
+<option value="gastro">Gastrointestinal &amp; Antacids</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-[18px]" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<!-- Stock Status Filter -->
+<div class="md:col-span-2">
+<div class="relative">
+<select class="w-full pl-3 pr-8 py-2.5 bg-surface-container-low/80 border border-outline-variant/60 rounded-lg text-sm text-on-surface font-label-md appearance-none focus:outline-none focus:border-primary focus:bg-surface-container-lowest cursor-pointer">
+<option value="all">Stock: All Statuses</option>
+<option value="in_stock">In Stock (&gt; 20)</option>
+<option selected="" value="low_stock">Low Stock (&lt; 15)</option>
+<option value="out_of_stock">Out of Stock (0)</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-[18px]" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<!-- Generic Auto-Substitution Filter -->
+<div class="md:col-span-2">
+<div class="relative">
+<select class="w-full pl-3 pr-8 py-2.5 bg-surface-container-low/80 border border-outline-variant/60 rounded-lg text-sm text-on-surface font-label-md appearance-none focus:outline-none focus:border-primary focus:bg-surface-container-lowest cursor-pointer">
+<option value="all">Substitution: All</option>
+<option value="active">Active in Marketplace</option>
+<option value="inactive">Inactive / Paused</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-[18px]" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Quick Filter Chips -->
+<div class="flex items-center flex-wrap gap-2 pt-2 border-t border-surface-container-low text-xs">
+<span class="text-on-surface-variant font-label-md mr-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-outline" data-icon="filter_alt">filter_alt</span>
+          Quick Filters:
+        </span>
+<button class="px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed font-label-md font-semibold rounded-full flex items-center gap-1.5 hover:opacity-90">
+<span>Show Low Stock (7)</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="close">close</span>
+</button>
+<button class="px-3 py-1 bg-surface-container-low hover:bg-surface-container text-on-surface-variant font-label-md font-medium rounded-full flex items-center gap-1.5 transition-colors">
+<span>Expiring &lt; 90 Days (4)</span>
+</button>
+<button class="px-3 py-1 bg-surface-container-low hover:bg-surface-container text-on-surface-variant font-label-md font-medium rounded-full flex items-center gap-1.5 transition-colors">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span>High-Margin Generics (&gt; 60%)</span>
+</button>
+<button class="px-3 py-1 bg-surface-container-low hover:bg-surface-container text-on-surface-variant font-label-md font-medium rounded-full flex items-center gap-1.5 transition-colors">
+<span>Schedule H / H1 Only</span>
+</button>
+<button class="ml-auto text-primary font-label-md text-xs font-semibold hover:underline">
+          Reset All Filters
+        </button>
+</div>
+</div>
+<!-- 5. SEARCHABLE / FILTERABLE MEDICINE INVENTORY TABLE -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container overflow-hidden mb-8">
+<!-- Table Quick Summary Bar -->
+<div class="px-6 py-3.5 bg-surface-container-low/50 border-b border-surface-container flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="text-xs font-label-md text-on-surface font-bold">Showing 6 of 342 medicines</span>
+<span class="text-xs text-on-surface-variant">|</span>
+<span class="text-xs text-on-surface-variant flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+            Automated generic replacement enabled for 318 medicines
+          </span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-1.5 text-outline hover:text-on-surface hover:bg-surface-container rounded transition-colors" title="Table Density">
+<span class="material-symbols-outlined text-[18px]" data-icon="density_medium">density_medium</span>
+</button>
+<button class="p-1.5 text-outline hover:text-on-surface hover:bg-surface-container rounded transition-colors" title="Customize Columns">
+<span class="material-symbols-outlined text-[18px]" data-icon="view_column">view_column</span>
+</button>
+</div>
+</div>
+<!-- High-Density Clinical Data Table -->
+<div class="overflow-x-auto custom-scrollbar">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-surface-container bg-surface-container-low/30 text-on-surface-variant text-[12px] font-label-md">
+<th class="py-3 px-4 font-semibold">Medicine &amp; Brand Equiv.</th>
+<th class="py-3 px-4 font-semibold">Salt Composition &amp; Strength</th>
+<th class="py-3 px-4 font-semibold">Manufacturer &amp; Batch</th>
+<th class="py-3 px-4 font-semibold">Selling Price / MRP</th>
+<th class="py-3 px-4 font-semibold">Stock Health</th>
+<th class="py-3 px-4 font-semibold">Expiry</th>
+<th class="py-3 px-4 font-semibold text-center">Marketplace Sub</th>
+<th class="py-3 px-4 font-semibold text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container text-xs">
+<!-- Row 1: Amoxyclav 625 Generic -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="font-bold text-on-surface font-label-md text-sm">Amoxyclav 625 Generic IP</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="text-[11px] text-on-surface-variant">Brand Match:</span>
+<span class="text-[11px] font-medium text-primary bg-primary/10 px-1.5 py-0.2 rounded">Augmentin 625</span>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface font-medium">Amoxicillin 500mg + Clavulanic Acid 125mg</div>
+<div class="text-[11px] text-outline">Tablets • Strip of 10</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface">Cipla Ltd</div>
+<div class="text-[11px] font-mono text-outline">Batch #CP-892</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="font-bold text-on-surface text-sm">₹73.50</div>
+<div class="text-[11px] text-on-surface-variant line-through">MRP: ₹204.50</div>
+<span class="inline-block mt-0.5 text-[10px] font-bold text-on-secondary-container bg-secondary-container/50 px-1.5 py-0.2 rounded">
+                  64% Off
+                </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-bold text-on-surface font-label-md">142 strips</span>
+<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/15 text-primary">Good</span>
+</div>
+<div class="w-24 bg-surface-container-high h-1.5 rounded-full mt-1.5 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 85%"></div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface font-medium">Oct 2026</div>
+<div class="text-[11px] text-outline">28 mos left</div>
+</td>
+<td class="py-3.5 px-4 text-center">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-8 h-4 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-surface-container-lowest after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded" title="Edit Medicine Details">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+<button class="px-2 py-1 text-[11px] font-label-md font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded flex items-center gap-0.5" title="Quick Restock +10">
+<span>+10</span>
+</button>
+<button class="p-1 text-outline hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Metformin 500mg SR (LOW STOCK) -->
+<tr class="hover:bg-surface-container-low/60 transition-colors bg-tertiary-fixed/10">
+<td class="py-3.5 px-4">
+<div class="font-bold text-on-surface font-label-md text-sm">Metformin 500mg SR</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="text-[11px] text-on-surface-variant">Brand Match:</span>
+<span class="text-[11px] font-medium text-primary bg-primary/10 px-1.5 py-0.2 rounded">Glycomet SR</span>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface font-medium">Metformin Hydrochloride 500mg IP</div>
+<div class="text-[11px] text-outline">Sustained Release • Strip of 20</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface">Sun Pharma</div>
+<div class="text-[11px] font-mono text-outline">Batch #SN-410</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="font-bold text-on-surface text-sm">₹18.00</div>
+<div class="text-[11px] text-on-surface-variant line-through">MRP: ₹65.00</div>
+<span class="inline-block mt-0.5 text-[10px] font-bold text-on-secondary-container bg-secondary-container/50 px-1.5 py-0.2 rounded">
+                  72% Off
+                </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-bold text-tertiary font-label-md">8 strips</span>
+<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-tertiary-fixed text-on-tertiary-fixed">Low Stock</span>
+</div>
+<div class="w-24 bg-surface-container-high h-1.5 rounded-full mt-1.5 overflow-hidden">
+<div class="bg-tertiary h-full rounded-full" style="width: 15%"></div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface font-medium">Dec 2025</div>
+<div class="text-[11px] text-outline">18 mos left</div>
+</td>
+<td class="py-3.5 px-4 text-center">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-8 h-4 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-surface-container-lowest after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded" title="Edit Medicine Details">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+<button class="px-2 py-1 text-[11px] font-label-md font-bold text-on-tertiary-container bg-tertiary-container hover:opacity-90 rounded flex items-center gap-0.5" title="Restock Urgently">
+<span>+50 Restock</span>
+</button>
+<button class="p-1 text-outline hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Paracetamol 650mg -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="font-bold text-on-surface font-label-md text-sm">Paracetamol 650mg</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="text-[11px] text-on-surface-variant">Brand Match:</span>
+<span class="text-[11px] font-medium text-primary bg-primary/10 px-1.5 py-0.2 rounded">Dolo 650</span>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface font-medium">Paracetamol 650mg IP</div>
+<div class="text-[11px] text-outline">Tablets • Strip of 15</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface">Mankind Pharma</div>
+<div class="text-[11px] font-mono text-outline">Batch #MK-102</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="font-bold text-on-surface text-sm">₹14.20</div>
+<div class="text-[11px] text-on-surface-variant line-through">MRP: ₹34.00</div>
+<span class="inline-block mt-0.5 text-[10px] font-bold text-on-secondary-container bg-secondary-container/50 px-1.5 py-0.2 rounded">
+                  58% Off
+                </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-bold text-on-surface font-label-md">215 strips</span>
+<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/15 text-primary">Good</span>
+</div>
+<div class="w-24 bg-surface-container-high h-1.5 rounded-full mt-1.5 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 95%"></div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface font-medium">Aug 2026</div>
+<div class="text-[11px] text-outline">26 mos left</div>
+</td>
+<td class="py-3.5 px-4 text-center">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-8 h-4 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-surface-container-lowest after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded" title="Edit Details">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+<button class="px-2 py-1 text-[11px] font-label-md font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded flex items-center gap-0.5">
+<span>+10</span>
+</button>
+<button class="p-1 text-outline hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Atorvastatin 10mg (OUT OF STOCK) -->
+<tr class="hover:bg-surface-container-low/60 transition-colors bg-error-container/10">
+<td class="py-3.5 px-4">
+<div class="font-bold text-on-surface font-label-md text-sm">Atorvastatin 10mg</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="text-[11px] text-on-surface-variant">Brand Match:</span>
+<span class="text-[11px] font-medium text-primary bg-primary/10 px-1.5 py-0.2 rounded">Lipitor</span>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface font-medium">Atorvastatin Calcium 10mg IP</div>
+<div class="text-[11px] text-outline">Film Coated • Strip of 10</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface">Intas Pharma</div>
+<div class="text-[11px] font-mono text-outline">Batch #IN-774</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="font-bold text-on-surface text-sm">₹32.00</div>
+<div class="text-[11px] text-on-surface-variant line-through">MRP: ₹110.00</div>
+<span class="inline-block mt-0.5 text-[10px] font-bold text-on-secondary-container bg-secondary-container/50 px-1.5 py-0.2 rounded">
+                  71% Off
+                </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-bold text-error font-label-md">0 strips</span>
+<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-error-container text-on-error-container">Out of Stock</span>
+</div>
+<div class="w-24 bg-surface-container-high h-1.5 rounded-full mt-1.5 overflow-hidden">
+<div class="bg-error h-full rounded-full" style="width: 0%"></div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface font-medium">Nov 2026</div>
+<div class="text-[11px] text-outline">29 mos left</div>
+</td>
+<td class="py-3.5 px-4 text-center">
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-8 h-4 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-surface-container-lowest after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded" title="Edit">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+<button class="px-2 py-1 text-[11px] font-label-md font-bold text-on-primary bg-primary hover:bg-primary-container rounded flex items-center gap-0.5">
+<span>Reorder</span>
+</button>
+<button class="p-1 text-outline hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: Pantoprazole 40mg -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="font-bold text-on-surface font-label-md text-sm">Pantoprazole 40mg</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="text-[11px] text-on-surface-variant">Brand Match:</span>
+<span class="text-[11px] font-medium text-primary bg-primary/10 px-1.5 py-0.2 rounded">Pan 40</span>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface font-medium">Pantoprazole Sodium Gastro-resistant IP</div>
+<div class="text-[11px] text-outline">Tablets • Strip of 15</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface">Alkem Laboratories</div>
+<div class="text-[11px] font-mono text-outline">Batch #AL-902</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="font-bold text-on-surface text-sm">₹29.50</div>
+<div class="text-[11px] text-on-surface-variant line-through">MRP: ₹155.00</div>
+<span class="inline-block mt-0.5 text-[10px] font-bold text-on-secondary-container bg-secondary-container/50 px-1.5 py-0.2 rounded">
+                  81% Off
+                </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-bold text-on-surface font-label-md">88 strips</span>
+<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/15 text-primary">Good</span>
+</div>
+<div class="w-24 bg-surface-container-high h-1.5 rounded-full mt-1.5 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 60%"></div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface font-medium">Mar 2027</div>
+<div class="text-[11px] text-outline">33 mos left</div>
+</td>
+<td class="py-3.5 px-4 text-center">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-8 h-4 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-surface-container-lowest after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+<button class="px-2 py-1 text-[11px] font-label-md font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded flex items-center gap-0.5">
+<span>+10</span>
+</button>
+<button class="p-1 text-outline hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 6: Cetirizine 10mg -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="font-bold text-on-surface font-label-md text-sm">Cetirizine 10mg</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="text-[11px] text-on-surface-variant">Brand Match:</span>
+<span class="text-[11px] font-medium text-primary bg-primary/10 px-1.5 py-0.2 rounded">Cetzine</span>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface font-medium">Cetirizine Hydrochloride 10mg IP</div>
+<div class="text-[11px] text-outline">Tablets • Strip of 10</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface">Torrent Pharma</div>
+<div class="text-[11px] font-mono text-outline">Batch #TR-339</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="font-bold text-on-surface text-sm">₹8.90</div>
+<div class="text-[11px] text-on-surface-variant line-through">MRP: ₹22.50</div>
+<span class="inline-block mt-0.5 text-[10px] font-bold text-on-secondary-container bg-secondary-container/50 px-1.5 py-0.2 rounded">
+                  60% Off
+                </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-bold text-on-surface font-label-md">112 strips</span>
+<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/15 text-primary">Good</span>
+</div>
+<div class="w-24 bg-surface-container-high h-1.5 rounded-full mt-1.5 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 70%"></div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface font-medium">Jan 2027</div>
+<div class="text-[11px] text-outline">31 mos left</div>
+</td>
+<td class="py-3.5 px-4 text-center">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-8 h-4 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-surface-container-lowest after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+<button class="px-2 py-1 text-[11px] font-label-md font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded flex items-center gap-0.5">
+<span>+10</span>
+</button>
+<button class="p-1 text-outline hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Pagination Bar -->
+<div class="p-4 bg-surface-container-lowest border-t border-surface-container flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-on-surface-variant">
+<div class="flex items-center gap-2">
+<span>Rows per page:</span>
+<select class="bg-surface-container-low border border-outline-variant/60 rounded px-2 py-1 text-xs text-on-surface font-label-md focus:outline-none focus:border-primary">
+<option>10</option>
+<option>25</option>
+<option>50</option>
+</select>
+<span class="ml-2">1–6 of 342 medicines</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-1.5 text-outline hover:text-on-surface rounded disabled:opacity-40" disabled="">
+<span class="material-symbols-outlined text-[18px]" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="w-7 h-7 rounded bg-primary text-on-primary font-bold font-label-md flex items-center justify-center">1</button>
+<button class="w-7 h-7 rounded hover:bg-surface-container text-on-surface font-label-md flex items-center justify-center">2</button>
+<button class="w-7 h-7 rounded hover:bg-surface-container text-on-surface font-label-md flex items-center justify-center">3</button>
+<span class="px-1 text-outline">...</span>
+<button class="w-7 h-7 rounded hover:bg-surface-container text-on-surface font-label-md flex items-center justify-center">35</button>
+<button class="p-1.5 text-outline hover:text-on-surface rounded">
+<span class="material-symbols-outlined text-[18px]" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<!-- ========================================================================= -->
+<!-- 6. "ADD NEW MEDICINE" MODAL OVERLAY / PANEL                               -->
+<!-- ========================================================================= -->
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-inverse-surface/40 backdrop-blur-sm p-4 overflow-y-auto" id="addMedicineModal">
+<div class="bg-surface-container-lowest rounded-2xl shadow-xl border border-surface-container w-full max-w-2xl my-8 overflow-hidden transform transition-all">
+<!-- Modal Header -->
+<div class="p-6 border-b border-surface-container bg-surface-container-low/50 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]" data-icon="medication">medication</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h3 class="text-headline-sm font-headline-sm font-bold text-on-surface">Add New Generic Medicine to Inventory</h3>
+</div>
+<div class="flex items-center gap-1.5 text-xs text-primary font-label-md font-semibold mt-0.5">
+<span class="material-symbols-outlined text-[16px]" data-icon="verified">verified</span>
+<span>CDSCO Compliant Verification &amp; Mapping Active</span>
+</div>
+</div>
+</div>
+<!-- Close Button -->
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container transition-colors" onclick="document.getElementById('addMedicineModal').classList.add('hidden')">
+<span class="material-symbols-outlined text-[20px]" data-icon="close">close</span>
+</button>
+</div>
+<!-- Modal Body / Form Fields -->
+<div class="p-6 space-y-4 max-h-[716px] overflow-y-auto custom-scrollbar">
+<!-- Field 1: Medicine Trade / Generic Name -->
+<div>
+<label class="block text-xs font-label-md font-bold text-on-surface mb-1">
+            Medicine Trade / Generic Name <span class="text-error">*</span>
+</label>
+<input class="w-full px-3.5 py-2 text-sm bg-surface-container-low/70 border border-outline-variant rounded-lg text-on-surface focus:outline-none focus:border-primary focus:bg-surface-container-lowest transition-all" placeholder="e.g. Amoxyclav 625 Generic IP, Metformin 500mg SR" type="text" value="Amoxyclav 625 Generic IP"/>
+</div>
+<!-- Field 2: Generic Salt & Composition with Auto-Suggest -->
+<div>
+<label class="block text-xs font-label-md font-bold text-on-surface mb-1">
+            Generic Salt Name &amp; Composition <span class="text-error">*</span>
+</label>
+<div class="relative">
+<input class="w-full px-3.5 py-2 text-sm bg-surface-container-low/70 border border-outline-variant rounded-lg text-on-surface focus:outline-none focus:border-primary focus:bg-surface-container-lowest transition-all pr-9" placeholder="Search CDSCO verified salt formulation..." type="text" value="Amoxicillin (500mg) + Potassium Clavulanate (125mg)"/>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-primary text-[18px]" data-icon="verified_user">verified_user</span>
+</div>
+<p class="text-[11px] text-on-surface-variant mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-primary" data-icon="info">info</span>
+            Auto-matches consumer prescriptions for Augmentin 625 &amp; Clavam 625.
+          </p>
+</div>
+<!-- Field 3: Manufacturer & Marketing Chemist -->
+<div>
+<label class="block text-xs font-label-md font-bold text-on-surface mb-1">
+            Manufacturer / Marketing Chemist <span class="text-error">*</span>
+</label>
+<input class="w-full px-3.5 py-2 text-sm bg-surface-container-low/70 border border-outline-variant rounded-lg text-on-surface focus:outline-none focus:border-primary focus:bg-surface-container-lowest transition-all" placeholder="e.g. Cipla Ltd, Sun Pharma, Torrent" type="text" value="Cipla Generics Ltd"/>
+</div>
+<!-- Pricing Grid & Savings Preview -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-3 p-3.5 bg-surface-container-low/50 rounded-xl border border-surface-container">
+<div>
+<label class="block text-xs font-label-md font-semibold text-on-surface mb-1">
+              Selling Price (₹) <span class="text-error">*</span>
+</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-outline text-xs font-bold">₹</span>
+<input class="w-full pl-7 pr-3 py-1.5 text-sm bg-surface-container-lowest border border-outline-variant rounded-lg text-on-surface font-bold focus:outline-none focus:border-primary" step="0.01" type="number" value="73.50"/>
+</div>
+</div>
+<div>
+<label class="block text-xs font-label-md font-semibold text-on-surface mb-1">
+              Maximum Retail Price (MRP ₹) <span class="text-error">*</span>
+</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-outline text-xs font-bold">₹</span>
+<input class="w-full pl-7 pr-3 py-1.5 text-sm bg-surface-container-lowest border border-outline-variant rounded-lg text-on-surface font-bold focus:outline-none focus:border-primary" step="0.01" type="number" value="204.00"/>
+</div>
+</div>
+<div class="flex flex-col justify-center">
+<span class="text-xs font-label-md text-on-surface-variant font-semibold">Customer Savings:</span>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="text-sm font-bold text-primary font-label-md">64% OFF</span>
+<span class="text-[11px] text-on-surface-variant font-body-sm">(Save ₹130.50)</span>
+</div>
+</div>
+</div>
+<!-- Stock Quantity & Alert Threshold -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+<div>
+<label class="block text-xs font-label-md font-bold text-on-surface mb-1">
+              Stock Quantity (Strips/Units) <span class="text-error">*</span>
+</label>
+<input class="w-full px-3.5 py-2 text-sm bg-surface-container-low/70 border border-outline-variant rounded-lg text-on-surface focus:outline-none focus:border-primary focus:bg-surface-container-lowest transition-all" type="number" value="100"/>
+</div>
+<div>
+<label class="block text-xs font-label-md font-bold text-on-surface mb-1">
+              Reorder Alert Threshold
+            </label>
+<input class="w-full px-3.5 py-2 text-sm bg-surface-container-low/70 border border-outline-variant rounded-lg text-on-surface focus:outline-none focus:border-primary focus:bg-surface-container-lowest transition-all" placeholder="Notify when stock &lt; threshold" type="number" value="15"/>
+</div>
+</div>
+<!-- Batch Number & Expiry Date -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+<div>
+<label class="block text-xs font-label-md font-bold text-on-surface mb-1">
+              Batch Number <span class="text-error">*</span>
+</label>
+<input class="w-full px-3.5 py-2 text-sm bg-surface-container-low/70 border border-outline-variant rounded-lg text-on-surface uppercase font-mono focus:outline-none focus:border-primary focus:bg-surface-container-lowest transition-all" placeholder="e.g. CP-892" type="text" value="CP-904A"/>
+</div>
+<div>
+<label class="block text-xs font-label-md font-bold text-on-surface mb-1">
+              Expiry Date <span class="text-error">*</span>
+</label>
+<input class="w-full px-3.5 py-2 text-sm bg-surface-container-low/70 border border-outline-variant rounded-lg text-on-surface focus:outline-none focus:border-primary focus:bg-surface-container-lowest transition-all" placeholder="MM/YYYY" type="text" value="11/2026"/>
+</div>
+</div>
+<!-- Therapeutic Category & Prescription Requirement -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+<div>
+<label class="block text-xs font-label-md font-bold text-on-surface mb-1">
+              Therapeutic Category
+            </label>
+<div class="relative">
+<select class="w-full px-3 py-2 text-sm bg-surface-container-low/70 border border-outline-variant rounded-lg text-on-surface appearance-none focus:outline-none focus:border-primary">
+<option>Antibiotics &amp; Antimicrobial</option>
+<option>Antidiabetic / Glycemic Care</option>
+<option>Analgesics &amp; Antipyretics</option>
+<option>Cardiac Care</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-[18px]" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<div>
+<label class="block text-xs font-label-md font-bold text-on-surface mb-1">
+              Prescription Requirement
+            </label>
+<div class="flex items-center gap-4 mt-2">
+<label class="inline-flex items-center gap-2 text-xs font-label-md cursor-pointer">
+<input checked="" class="text-primary focus:ring-primary h-4 w-4" name="rx_type" type="radio"/>
+<span>Rx Required (Schedule H)</span>
+</label>
+<label class="inline-flex items-center gap-2 text-xs font-label-md cursor-pointer">
+<input class="text-primary focus:ring-primary h-4 w-4" name="rx_type" type="radio"/>
+<span>OTC (Over the Counter)</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="p-5 border-t border-surface-container bg-surface-container-low/30 flex items-center justify-end gap-3">
+<button class="px-5 py-2.5 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container text-xs font-label-md font-semibold transition-colors" onclick="document.getElementById('addMedicineModal').classList.add('hidden')">
+          Cancel
+        </button>
+<button class="px-5 py-2.5 rounded-lg bg-primary text-on-primary hover:bg-primary-container text-xs font-label-md font-bold flex items-center gap-2 shadow-sm transition-all" onclick="document.getElementById('addMedicineModal').classList.add('hidden')">
+<span class="material-symbols-outlined text-[18px]" data-icon="check_circle">check_circle</span>
+<span>Save &amp; Publish to Marketplace</span>
+</button>
+</div>
+</div>
+</div>
+</body></html>

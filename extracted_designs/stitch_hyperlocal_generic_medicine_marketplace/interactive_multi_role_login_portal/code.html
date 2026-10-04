@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CareWell Pharma - Login & Portal Access</title>
+  <!-- Google Fonts & Material Symbols -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,700;1,400;1,700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            userBlue: '#0066CC',
+            userBlueHover: '#0052A3',
+            userBlueLight: '#EBF4FF',
+            pharmacyGreen: '#00AA44',
+            pharmacyGreenHover: '#008C37',
+            pharmacyGreenLight: '#E8F8EE',
+            brandSlate: '#0F172A',
+            brandMuted: '#64748B',
+            brandBorder: '#E2E8F0',
+            brandBg: '#F8FAFC'
+          },
+          fontFamily: {
+            sans: ['"Atkinson Hyperlegible Next"', 'system-ui', '-apple-system', 'sans-serif']
+          },
+          boxShadow: {
+            subtle: '0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04)',
+            card: '0 10px 30px -4px rgba(15, 23, 42, 0.08)'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .screen-view {
+      transition: opacity 0.28s ease, transform 0.28s ease;
+    }
+    .screen-view.hidden-screen {
+      display: none !important;
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    .screen-view.active-screen {
+      display: flex !important;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    /* Smooth focus rings */
+    input:focus {
+      outline: none;
+    }
+  </style>
+</head>
+<body class="bg-[#F1F5F9] font-sans text-brandSlate antialiased min-h-screen flex items-center justify-center p-3 sm:p-6 selection:bg-blue-100 selection:text-userBlue">
+
+  <!-- Mobile Frame Mockup Container -->
+  <main class="w-full max-w-md bg-white min-h-[640px] rounded-3xl shadow-card border border-slate-200/80 overflow-hidden relative flex flex-col justify-between transition-all duration-300">
+    
+    <!-- Top System Bar / Mini Status Header -->
+    <div class="w-full px-6 pt-4 pb-2 flex items-center justify-between text-xs text-brandMuted select-none border-b border-slate-100">
+      <div class="flex items-center gap-1.5 font-medium">
+        <span class="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="tracking-wide">CareWell Network</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center gap-1 text-[11px] bg-slate-100 px-2 py-0.5 rounded-full font-semibold">
+          <span class="material-symbols-outlined text-[13px] text-emerald-600">lock</span>
+          256-bit SSL
+        </span>
+      </div>
+    </div>
+
+    <!-- MAIN INTERACTIVE SLIDES WRAPPER -->
+    <div class="flex-1 flex flex-col justify-center px-6 py-6 overflow-y-auto">
+
+      <!-- ========================================================
+           SCREEN 1: LOGIN TYPE SELECTION
+      ======================================================== -->
+      <section id="screen-selection" class="screen-view active-screen flex flex-col items-center text-center">
+        <!-- Logo & Branding -->
+        <div class="mb-8 flex flex-col items-center">
+          <div class="size-20 rounded-2xl bg-gradient-to-tr from-[#0066CC] via-[#0088EE] to-[#00AA44] p-[2.5px] shadow-lg shadow-blue-500/15 mb-4">
+            <div class="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
+              <span class="material-symbols-outlined text-[#0066CC] text-[42px]" style="font-variation-settings: 'FILL' 1;">local_pharmacy</span>
+            </div>
+          </div>
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/60 text-emerald-700 text-xs font-semibold mb-2">
+            <span class="material-symbols-outlined text-[15px]">verified</span>
+            <span>Verified Generic Marketplace</span>
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-brandSlate">CareWell Pharma</h1>
+          <p class="text-sm text-brandMuted mt-1 max-w-[260px]">Find affordable medicines nearby and save up to 70%</p>
+        </div>
+
+        <!-- Role Decision Cards / Stacked Buttons -->
+        <div class="w-full space-y-3.5">
+          <div class="text-left mb-1">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Choose portal to continue</span>
+          </div>
+
+          <!-- Login as User CTA -->
+          <button id="btn-goto-user" type="button" class="w-full min-h-[56px] px-5 py-3.5 rounded-2xl bg-[#0066CC] hover:bg-[#0052A3] active:scale-[0.985] text-white font-semibold flex items-center justify-between shadow-md shadow-blue-600/20 transition-all duration-150 cursor-pointer group">
+            <div class="flex items-center gap-3.5 text-left">
+              <div class="size-11 rounded-xl bg-white/20 flex items-center justify-center text-white group-hover:scale-105 transition-transform">
+                <span class="material-symbols-outlined text-[24px]">person</span>
+              </div>
+              <div>
+                <span class="block text-base leading-tight font-bold">Login as User</span>
+                <span class="block text-xs text-blue-100 font-normal mt-0.5">Order medicines & track deliveries</span>
+              </div>
+            </div>
+            <span class="material-symbols-outlined text-white/80 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+          </button>
+
+          <!-- Login as Pharmacy Admin CTA -->
+          <button id="btn-goto-pharmacy" type="button" class="w-full min-h-[56px] px-5 py-3.5 rounded-2xl bg-[#00AA44] hover:bg-[#008C37] active:scale-[0.985] text-white font-semibold flex items-center justify-between shadow-md shadow-emerald-600/20 transition-all duration-150 cursor-pointer group">
+            <div class="flex items-center gap-3.5 text-left">
+              <div class="size-11 rounded-xl bg-white/20 flex items-center justify-center text-white group-hover:scale-105 transition-transform">
+                <span class="material-symbols-outlined text-[24px]">store</span>
+              </div>
+              <div>
+                <span class="block text-base leading-tight font-bold">Login as Pharmacy Admin</span>
+                <span class="block text-xs text-emerald-100 font-normal mt-0.5">Manage stock, orders & dispatch</span>
+              </div>
+            </div>
+            <span class="material-symbols-outlined text-white/80 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+          </button>
+        </div>
+
+        <!-- Trust & Security Badges Footnote -->
+        <div class="mt-8 pt-6 border-t border-slate-100 w-full flex items-center justify-around text-xs text-slate-500">
+          <div class="flex items-center gap-1">
+            <span class="material-symbols-outlined text-emerald-600 text-base">local_shipping</span>
+            <span>Hyperlocal 30m SLA</span>
+          </div>
+          <span class="text-slate-300">•</span>
+          <div class="flex items-center gap-1">
+            <span class="material-symbols-outlined text-blue-600 text-base">health_and_safety</span>
+            <span>CDSCO Certified</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================
+           SCREEN 2: USER LOGIN
+      ======================================================== -->
+      <section id="screen-user-login" class="screen-view hidden-screen flex flex-col">
+        <!-- Back Navigation & Title -->
+        <div class="flex items-center justify-between mb-5">
+          <button type="button" class="btn-back-to-selection inline-flex items-center gap-1 text-sm font-semibold text-brandMuted hover:text-brandSlate transition-colors -ml-1 p-1 rounded-lg hover:bg-slate-100 cursor-pointer">
+            <span class="material-symbols-outlined text-xl">arrow_back</span>
+            <span>Back</span>
+          </button>
+          <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-userBlue">
+            <span class="material-symbols-outlined text-[14px]">person</span>
+            <span>Customer Portal</span>
+          </span>
+        </div>
+
+        <div class="mb-6">
+          <h2 class="text-2xl font-bold text-brandSlate tracking-tight">User Login</h2>
+          <p class="text-sm text-brandMuted mt-1">Welcome back! Sign in to order verified generic medicines.</p>
+        </div>
+
+        <!-- Demo Credentials Hint Pill -->
+        <div class="mb-5 p-3 rounded-xl bg-blue-50/70 border border-blue-200/60 text-xs text-blue-900 flex items-start gap-2">
+          <span class="material-symbols-outlined text-userBlue text-base mt-0.5">info</span>
+          <div class="flex-1 leading-relaxed">
+            <strong class="font-bold">Demo Autofill:</strong> Tap to quickly test with <button type="button" id="autofill-user" class="underline font-semibold text-userBlue hover:text-userBlueHover">rahul.mehta@example.com / demo123</button>
+          </div>
+        </div>
+
+        <!-- User Form -->
+        <form id="form-user-login" novalidate class="space-y-4">
+          <!-- Email Field -->
+          <div>
+            <label for="user-email" class="block text-xs font-bold text-brandSlate uppercase tracking-wider mb-1.5">
+              Email Address <span class="text-rose-500">*</span>
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <span class="material-symbols-outlined text-[20px]">mail</span>
+              </div>
+              <input type="email" id="user-email" name="email" placeholder="Enter your email" class="w-full min-h-[48px] pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-sm text-brandSlate placeholder:text-slate-400 focus:bg-white focus:border-userBlue focus:ring-2 focus:ring-userBlue/20 transition-all" required/>
+            </div>
+            <p id="error-user-email" class="hidden text-xs text-rose-600 font-medium mt-1.5 flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">error</span>
+              <span>Please enter a valid email address</span>
+            </p>
+          </div>
+
+          <!-- Password Field -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="user-password" class="block text-xs font-bold text-brandSlate uppercase tracking-wider">
+                Password <span class="text-rose-500">*</span>
+              </label>
+              <button type="button" id="btn-user-forgot" class="text-xs font-semibold text-userBlue hover:underline cursor-pointer">
+                Forgot Password?
+              </button>
+            </div>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <span class="material-symbols-outlined text-[20px]">lock</span>
+              </div>
+              <input type="password" id="user-password" name="password" placeholder="Enter password" class="w-full min-h-[48px] pl-10 pr-11 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-sm text-brandSlate placeholder:text-slate-400 focus:bg-white focus:border-userBlue focus:ring-2 focus:ring-userBlue/20 transition-all" required/>
+              <button type="button" class="toggle-password absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer" data-target="user-password" aria-label="Toggle password visibility">
+                <span class="material-symbols-outlined text-[20px]">visibility</span>
+              </button>
+            </div>
+            <p id="error-user-password" class="hidden text-xs text-rose-600 font-medium mt-1.5 flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">error</span>
+              <span>Password must be at least 6 characters</span>
+            </p>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="pt-2">
+            <button type="submit" id="btn-submit-user" class="w-full min-h-[50px] rounded-xl bg-[#0066CC] hover:bg-[#0052A3] active:scale-[0.985] text-white font-bold text-base flex items-center justify-center gap-2 shadow-md shadow-blue-600/20 transition-all cursor-pointer">
+              <span>Login</span>
+              <span class="material-symbols-outlined text-[20px]">login</span>
+            </button>
+          </div>
+        </form>
+
+        <!-- New User Sign Up Footer -->
+        <div class="mt-8 text-center text-xs text-brandMuted pt-4 border-t border-slate-100">
+          <span>New user?</span>
+          <button type="button" id="btn-user-signup" class="font-bold text-userBlue hover:underline ml-1 cursor-pointer">Sign up</button>
+        </div>
+      </section>
+
+      <!-- ========================================================
+           SCREEN 3: PHARMACY ADMIN LOGIN
+      ======================================================== -->
+      <section id="screen-pharmacy-login" class="screen-view hidden-screen flex flex-col">
+        <!-- Back Navigation & Title -->
+        <div class="flex items-center justify-between mb-4">
+          <button type="button" class="btn-back-to-selection inline-flex items-center gap-1 text-sm font-semibold text-brandMuted hover:text-brandSlate transition-colors -ml-1 p-1 rounded-lg hover:bg-slate-100 cursor-pointer">
+            <span class="material-symbols-outlined text-xl">arrow_back</span>
+            <span>Back</span>
+          </button>
+          <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-pharmacyGreen">
+            <span class="material-symbols-outlined text-[14px]">store</span>
+            <span>Retailer Admin</span>
+          </span>
+        </div>
+
+        <div class="mb-5">
+          <h2 class="text-2xl font-bold text-brandSlate tracking-tight">Pharmacy Admin Login</h2>
+          <p class="text-sm text-brandMuted mt-1">Access orders, drug stock, and dispatch management.</p>
+        </div>
+
+        <!-- Demo Credentials Hint Pill -->
+        <div class="mb-4 p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/60 text-xs text-emerald-900 flex items-start gap-2">
+          <span class="material-symbols-outlined text-pharmacyGreen text-base mt-0.5">info</span>
+          <div class="flex-1 leading-relaxed">
+            <strong class="font-bold">Demo Autofill:</strong> Tap to test with <button type="button" id="autofill-pharmacy" class="underline font-semibold text-pharmacyGreen hover:text-pharmacyGreenHover">PH-88291 / chemist@apollomeds.com</button>
+          </div>
+        </div>
+
+        <!-- Pharmacy Form -->
+        <form id="form-pharmacy-login" novalidate class="space-y-3.5">
+          <!-- Pharmacy ID / Name Field -->
+          <div>
+            <label for="pharmacy-id" class="block text-xs font-bold text-brandSlate uppercase tracking-wider mb-1.5">
+              Pharmacy Name / ID <span class="text-rose-500">*</span>
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <span class="material-symbols-outlined text-[20px]">badge</span>
+              </div>
+              <input type="text" id="pharmacy-id" name="pharmacyId" placeholder="Enter pharmacy registration ID" class="w-full min-h-[48px] pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-sm text-brandSlate placeholder:text-slate-400 focus:bg-white focus:border-pharmacyGreen focus:ring-2 focus:ring-pharmacyGreen/20 transition-all" required/>
+            </div>
+            <p id="error-pharmacy-id" class="hidden text-xs text-rose-600 font-medium mt-1.5 flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">error</span>
+              <span>Please enter pharmacy name or license ID</span>
+            </p>
+          </div>
+
+          <!-- Email Field -->
+          <div>
+            <label for="pharmacy-email" class="block text-xs font-bold text-brandSlate uppercase tracking-wider mb-1.5">
+              Registered Email <span class="text-rose-500">*</span>
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <span class="material-symbols-outlined text-[20px]">mail</span>
+              </div>
+              <input type="email" id="pharmacy-email" name="email" placeholder="Enter email" class="w-full min-h-[48px] pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-sm text-brandSlate placeholder:text-slate-400 focus:bg-white focus:border-pharmacyGreen focus:ring-2 focus:ring-pharmacyGreen/20 transition-all" required/>
+            </div>
+            <p id="error-pharmacy-email" class="hidden text-xs text-rose-600 font-medium mt-1.5 flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">error</span>
+              <span>Please enter a valid chemist email</span>
+            </p>
+          </div>
+
+          <!-- Password Field -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="pharmacy-password" class="block text-xs font-bold text-brandSlate uppercase tracking-wider">
+                Password <span class="text-rose-500">*</span>
+              </label>
+              <button type="button" id="btn-pharmacy-forgot" class="text-xs font-semibold text-pharmacyGreen hover:underline cursor-pointer">
+                Forgot?
+              </button>
+            </div>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <span class="material-symbols-outlined text-[20px]">lock</span>
+              </div>
+              <input type="password" id="pharmacy-password" name="password" placeholder="Enter password" class="w-full min-h-[48px] pl-10 pr-11 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-sm text-brandSlate placeholder:text-slate-400 focus:bg-white focus:border-pharmacyGreen focus:ring-2 focus:ring-pharmacyGreen/20 transition-all" required/>
+              <button type="button" class="toggle-password absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer" data-target="pharmacy-password" aria-label="Toggle password visibility">
+                <span class="material-symbols-outlined text-[20px]">visibility</span>
+              </button>
+            </div>
+            <p id="error-pharmacy-password" class="hidden text-xs text-rose-600 font-medium mt-1.5 flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">error</span>
+              <span>Password must be at least 6 characters</span>
+            </p>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="pt-2">
+            <button type="submit" id="btn-submit-pharmacy" class="w-full min-h-[50px] rounded-xl bg-[#00AA44] hover:bg-[#008C37] active:scale-[0.985] text-white font-bold text-base flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all cursor-pointer">
+              <span>Login</span>
+              <span class="material-symbols-outlined text-[20px]">login</span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Register Link Footer -->
+        <div class="mt-6 text-center text-xs text-brandMuted pt-4 border-t border-slate-100">
+          <span>Don't have an account?</span>
+          <button type="button" id="btn-pharmacy-register" class="font-bold text-pharmacyGreen hover:underline ml-1 cursor-pointer">Register</button>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Interactive Feedback Modal / Notification Toast (Full Screen Overlay) -->
+    <div id="feedback-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200">
+      <div class="bg-white w-full max-w-xs rounded-2xl p-5 shadow-2xl border border-slate-100 text-center transform scale-95 transition-transform duration-200" id="feedback-card">
+        <div id="modal-icon-container" class="size-14 rounded-full mx-auto flex items-center justify-center mb-3">
+          <span id="modal-icon" class="material-symbols-outlined text-3xl"></span>
+        </div>
+        <h3 id="modal-title" class="text-lg font-bold text-brandSlate">Success</h3>
+        <p id="modal-message" class="text-xs text-brandMuted mt-1.5 leading-relaxed">Logged in successfully</p>
+        <div class="mt-5">
+          <button type="button" id="btn-modal-dismiss" class="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white shadow-sm transition-all cursor-pointer">
+            Continue to Dashboard
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Persistent Bottom Quality Tag -->
+    <footer class="w-full px-6 py-3 bg-slate-50/70 border-t border-slate-100 text-center">
+      <p class="text-[11px] text-slate-400">CareWell Pharma • Hyperlocal Generic Medicine Marketplace</p>
+    </footer>
+  </main>
+
+  <!-- Interactive Logic -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Screen references
+      const screenSelection = document.getElementById('screen-selection');
+      const screenUserLogin = document.getElementById('screen-user-login');
+      const screenPharmacyLogin = document.getElementById('screen-pharmacy-login');
+
+      // Navigation Buttons
+      const btnGotoUser = document.getElementById('btn-goto-user');
+      const btnGotoPharmacy = document.getElementById('btn-goto-pharmacy');
+      const backButtons = document.querySelectorAll('.btn-back-to-selection');
+
+      // Modal Elements
+      const feedbackModal = document.getElementById('feedback-modal');
+      const feedbackCard = document.getElementById('feedback-card');
+      const modalIconContainer = document.getElementById('modal-icon-container');
+      const modalIcon = document.getElementById('modal-icon');
+      const modalTitle = document.getElementById('modal-title');
+      const modalMessage = document.getElementById('modal-message');
+      const btnModalDismiss = document.getElementById('btn-modal-dismiss');
+
+      // Helper function to switch screen with smooth animation
+      function showScreen(targetScreen) {
+        [screenSelection, screenUserLogin, screenPharmacyLogin].forEach(screen => {
+          screen.classList.remove('active-screen');
+          screen.classList.add('hidden-screen');
+        });
+        targetScreen.classList.remove('hidden-screen');
+        setTimeout(() => {
+          targetScreen.classList.add('active-screen');
+        }, 10);
+      }
+
+      // Event: Navigate to User Login
+      btnGotoUser.addEventListener('click', () => {
+        showScreen(screenUserLogin);
+        clearValidationErrors();
+      });
+
+      // Event: Navigate to Pharmacy Login
+      btnGotoPharmacy.addEventListener('click', () => {
+        showScreen(screenPharmacyLogin);
+        clearValidationErrors();
+      });
+
+      // Event: Back buttons return to Selection screen
+      backButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          showScreen(screenSelection);
+          clearValidationErrors();
+        });
+      });
+
+      // Password visibility toggles
+      document.querySelectorAll('.toggle-password').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const targetId = btn.getAttribute('data-target');
+          const input = document.getElementById(targetId);
+          const icon = btn.querySelector('.material-symbols-outlined');
+          if (input.type === 'password') {
+            input.type = 'text';
+            icon.textContent = 'visibility_off';
+          } else {
+            input.type = 'password';
+            icon.textContent = 'visibility';
+          }
+        });
+      });
+
+      // Quick Autofill Demo helpers
+      const autofillUser = document.getElementById('autofill-user');
+      if (autofillUser) {
+        autofillUser.addEventListener('click', () => {
+          document.getElementById('user-email').value = 'rahul.mehta@example.com';
+          document.getElementById('user-password').value = 'demo123';
+          hideError('user-email');
+          hideError('user-password');
+        });
+      }
+
+      const autofillPharmacy = document.getElementById('autofill-pharmacy');
+      if (autofillPharmacy) {
+        autofillPharmacy.addEventListener('click', () => {
+          document.getElementById('pharmacy-id').value = 'PH-88291';
+          document.getElementById('pharmacy-email').value = 'chemist@apollomeds.com';
+          document.getElementById('pharmacy-password').value = 'admin123';
+          hideError('pharmacy-id');
+          hideError('pharmacy-email');
+          hideError('pharmacy-password');
+        });
+      }
+
+      // Validation display helpers
+      function showError(fieldId, customMsg) {
+        const errorEl = document.getElementById(`error-${fieldId}`);
+        const inputEl = document.getElementById(fieldId);
+        if (errorEl) {
+          if (customMsg) {
+            const span = errorEl.querySelector('span:last-child');
+            if (span) span.textContent = customMsg;
+          }
+          errorEl.classList.remove('hidden');
+        }
+        if (inputEl) {
+          inputEl.classList.add('border-rose-500', 'bg-rose-50/30');
+        }
+      }
+
+      function hideError(fieldId) {
+        const errorEl = document.getElementById(`error-${fieldId}`);
+        const inputEl = document.getElementById(fieldId);
+        if (errorEl) {
+          errorEl.classList.add('hidden');
+        }
+        if (inputEl) {
+          inputEl.classList.remove('border-rose-500', 'bg-rose-50/30');
+        }
+      }
+
+      function clearValidationErrors() {
+        ['user-email', 'user-password', 'pharmacy-id', 'pharmacy-email', 'pharmacy-password'].forEach(id => hideError(id));
+      }
+
+      function isValidEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+      }
+
+      // Show Feedback Modal
+      function triggerFeedback(type, title, message, colorScheme) {
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        
+        if (colorScheme === 'blue') {
+          modalIconContainer.className = 'size-14 rounded-full mx-auto flex items-center justify-center mb-3 bg-blue-100 text-userBlue';
+          modalIcon.textContent = type === 'success' ? 'check_circle' : 'info';
+          btnModalDismiss.className = 'w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white shadow-sm bg-[#0066CC] hover:bg-[#0052A3] transition-all cursor-pointer';
+        } else {
+          modalIconContainer.className = 'size-14 rounded-full mx-auto flex items-center justify-center mb-3 bg-emerald-100 text-pharmacyGreen';
+          modalIcon.textContent = type === 'success' ? 'verified' : 'info';
+          btnModalDismiss.className = 'w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white shadow-sm bg-[#00AA44] hover:bg-[#008C37] transition-all cursor-pointer';
+        }
+
+        feedbackModal.classList.remove('hidden');
+        setTimeout(() => {
+          feedbackModal.classList.remove('opacity-0');
+          feedbackCard.classList.remove('scale-95');
+          feedbackCard.classList.add('scale-100');
+        }, 10);
+      }
+
+      btnModalDismiss.addEventListener('click', () => {
+        feedbackModal.classList.add('opacity-0');
+        feedbackCard.classList.remove('scale-100');
+        feedbackCard.classList.add('scale-95');
+        setTimeout(() => {
+          feedbackModal.classList.add('hidden');
+        }, 200);
+      });
+
+      // User Login Form Submit Handler
+      const formUser = document.getElementById('form-user-login');
+      formUser.addEventListener('submit', (e) => {
+        e.preventDefault();
+        clearValidationErrors();
+        let valid = true;
+
+        const email = document.getElementById('user-email').value;
+        const pass = document.getElementById('user-password').value;
+
+        if (!email.trim() || !isValidEmail(email)) {
+          showError('user-email', 'Please enter a valid email address');
+          valid = false;
+        }
+
+        if (!pass || pass.length < 6) {
+          showError('user-password', 'Password must be at least 6 characters');
+          valid = false;
+        }
+
+        if (valid) {
+          triggerFeedback('success', 'User Login Successful', `Welcome back, ${email}! Connecting to CareWell generic delivery network...`, 'blue');
+        }
+      });
+
+      // Pharmacy Admin Form Submit Handler
+      const formPharmacy = document.getElementById('form-pharmacy-login');
+      formPharmacy.addEventListener('submit', (e) => {
+        e.preventDefault();
+        clearValidationErrors();
+        let valid = true;
+
+        const pharmId = document.getElementById('pharmacy-id').value;
+        const email = document.getElementById('pharmacy-email').value;
+        const pass = document.getElementById('pharmacy-password').value;
+
+        if (!pharmId.trim()) {
+          showError('pharmacy-id', 'Please enter pharmacy name or license ID');
+          valid = false;
+        }
+
+        if (!email.trim() || !isValidEmail(email)) {
+          showError('pharmacy-email', 'Please enter a valid registered email');
+          valid = false;
+        }
+
+        if (!pass || pass.length < 6) {
+          showError('pharmacy-password', 'Password must be at least 6 characters');
+          valid = false;
+        }
+
+        if (valid) {
+          triggerFeedback('success', 'Admin Portal Access Granted', `Pharmacy ID ${pharmId.toUpperCase()} verified. Opening order & inventory console...`, 'green');
+        }
+      });
+
+      // Inline input listeners to clear errors on typing
+      ['user-email', 'user-password'].forEach(id => {
+        document.getElementById(id).addEventListener('input', () => hideError(id));
+      });
+      ['pharmacy-id', 'pharmacy-email', 'pharmacy-password'].forEach(id => {
+        document.getElementById(id).addEventListener('input', () => hideError(id));
+      });
+
+      // Secondary Text Button Click Handlers (Forgot, Sign up, Register)
+      document.getElementById('btn-user-forgot').addEventListener('click', () => {
+        triggerFeedback('info', 'Password Reset Link Sent', 'A verification email has been dispatched to your registered address.', 'blue');
+      });
+      document.getElementById('btn-user-signup').addEventListener('click', () => {
+        triggerFeedback('info', 'New Customer Registration', 'Redirecting to customer profile creation with phone verification...', 'blue');
+      });
+      document.getElementById('btn-pharmacy-forgot').addEventListener('click', () => {
+        triggerFeedback('info', 'Pharmacy Admin Reset', 'Please contact partner support or check registered pharmacist email.', 'green');
+      });
+      document.getElementById('btn-pharmacy-register').addEventListener('click', () => {
+        triggerFeedback('info', 'Join CareWell Retailer Network', 'Opening 4-step pharmacy compliance & license onboarding flow...', 'green');
+      });
+
+    });
+  </script>
+</body>
+</html>

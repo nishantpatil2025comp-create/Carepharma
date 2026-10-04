@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Pharmacy Registration - GeniMed Marketplace</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,700;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-tertiary-fixed-variant": "#773215",
+            "surface-container-high": "#e6e8ea",
+            "on-primary-container": "#f4fffc",
+            "background": "#f7f9fb",
+            "error-container": "#ffdad6",
+            "surface-tint": "#006a61",
+            "outline": "#6d7a77",
+            "secondary-fixed-dim": "#4fdbc8",
+            "on-tertiary-fixed": "#370e00",
+            "on-secondary": "#ffffff",
+            "on-error-container": "#93000a",
+            "inverse-on-surface": "#eff1f3",
+            "on-secondary-container": "#006f64",
+            "tertiary": "#924628",
+            "outline-variant": "#bcc9c6",
+            "on-primary": "#ffffff",
+            "on-primary-fixed-variant": "#005049",
+            "inverse-surface": "#2d3133",
+            "secondary-container": "#6df5e1",
+            "primary-container": "#008378",
+            "primary-fixed-dim": "#6bd8cb",
+            "on-surface": "#191c1e",
+            "surface-bright": "#f7f9fb",
+            "on-secondary-fixed-variant": "#005048",
+            "surface-container-highest": "#e0e3e5",
+            "surface-container-low": "#f2f4f6",
+            "surface-dim": "#d8dadc",
+            "tertiary-container": "#b05e3d",
+            "surface-container": "#eceef0",
+            "on-tertiary-container": "#fffbff",
+            "primary-fixed": "#89f5e7",
+            "on-primary-fixed": "#00201d",
+            "surface-variant": "#e0e3e5",
+            "error": "#ba1a1a",
+            "tertiary-fixed-dim": "#ffb59a",
+            "on-tertiary": "#ffffff",
+            "on-secondary-fixed": "#00201c",
+            "on-background": "#191c1e",
+            "primary": "#00685f",
+            "on-surface-variant": "#3d4947",
+            "surface-container-lowest": "#ffffff",
+            "inverse-primary": "#6bd8cb",
+            "on-error": "#ffffff",
+            "secondary-fixed": "#71f8e4",
+            "tertiary-fixed": "#ffdbce",
+            "secondary": "#006b5f",
+            "surface": "#f7f9fb"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "fontFamily": {
+            "headline-sm": ["Atkinson Hyperlegible Next"],
+            "headline-md": ["Atkinson Hyperlegible Next"],
+            "headline-lg": ["Atkinson Hyperlegible Next"],
+            "label-lg": ["Atkinson Hyperlegible Next"],
+            "display-lg": ["Atkinson Hyperlegible Next"],
+            "body-sm": ["Atkinson Hyperlegible Next"],
+            "body-md": ["Atkinson Hyperlegible Next"],
+            "label-md": ["Atkinson Hyperlegible Next"],
+            "body-lg": ["Atkinson Hyperlegible Next"]
+          },
+          "fontSize": {
+            "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+            "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+            "label-lg": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "fontWeight": "700" }],
+            "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      font-family: 'Atkinson Hyperlegible Next', sans-serif;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .material-symbols-filled {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased min-h-screen pb-32 selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- Top App Bar (Shared Components Execution) -->
+<header class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 h-16 w-full max-w-lg mx-auto bg-surface-container-low dark:bg-surface-container shadow-sm">
+<div class="flex items-center gap-2">
+<button aria-label="Go back" class="p-2 -ml-2 rounded-full text-on-surface hover:bg-surface-container-high transition-colors active:scale-95 duration-100 ease-out flex items-center justify-center" type="button">
+<span class="material-symbols-outlined text-primary text-[24px]">arrow_back</span>
+</button>
+<div>
+<h1 class="font-headline-sm text-headline-sm font-semibold text-primary tracking-tight leading-tight">Pharmacy Registration</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-none text-xs">GeniMed Retailer Network</p>
+</div>
+</div>
+<button class="font-label-md text-label-md text-primary font-semibold hover:bg-surface-container-high px-3 py-1.5 rounded-full transition-colors active:scale-95 duration-100 ease-out" type="button">
+      Save &amp; Exit
+    </button>
+</header>
+<!-- Main Container -->
+<main class="w-full max-w-lg mx-auto px-4 pt-20 pb-4 space-y-5">
+<!-- Stepper Navigation Header -->
+<section class="bg-surface-container-lowest rounded-xl p-4 shadow-[0_4px_20px_rgba(0,104,95,0.05)]">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-on-primary font-label-md text-[12px] font-bold">2</span>
+<span class="font-label-md text-label-md text-primary font-semibold">Step 2 of 4 • Verification &amp; Licenses</span>
+</div>
+<span class="font-body-sm text-body-sm text-outline font-medium">50% Completed</span>
+</div>
+<!-- Segmented Bar -->
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden flex gap-1 mb-4">
+<div class="h-full w-1/4 bg-primary rounded-full"></div>
+<div class="h-full w-1/4 bg-primary rounded-full relative overflow-hidden">
+<div class="absolute inset-0 bg-primary-fixed-dim/40 animate-pulse"></div>
+</div>
+<div class="h-full w-1/4 bg-surface-container-high rounded-full"></div>
+<div class="h-full w-1/4 bg-surface-container-high rounded-full"></div>
+</div>
+<!-- Interactive Step Tabs -->
+<div class="grid grid-cols-4 gap-1 text-center">
+<!-- Step 1 Complete -->
+<button class="flex flex-col items-center group cursor-pointer focus:outline-none" type="button">
+<div class="w-8 h-8 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center mb-1 group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[18px] font-bold">check</span>
+</div>
+<span class="font-label-md text-[11px] leading-tight text-on-surface font-medium">Basic Info</span>
+</button>
+<!-- Step 2 Active -->
+<button class="flex flex-col items-center group cursor-pointer focus:outline-none" type="button">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center mb-1 ring-4 ring-primary-fixed/40 transition-transform">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+</div>
+<span class="font-label-md text-[11px] leading-tight text-primary font-bold">Verification</span>
+</button>
+<!-- Step 3 Pending -->
+<button class="flex flex-col items-center group cursor-pointer focus:outline-none opacity-60" type="button">
+<div class="w-8 h-8 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-[18px]">local_shipping</span>
+</div>
+<span class="font-label-md text-[11px] leading-tight text-on-surface-variant font-medium">Operations</span>
+</button>
+<!-- Step 4 Pending -->
+<button class="flex flex-col items-center group cursor-pointer focus:outline-none opacity-60" type="button">
+<div class="w-8 h-8 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-[18px]">account_balance</span>
+</div>
+<span class="font-label-md text-[11px] leading-tight text-on-surface-variant font-medium">Payout</span>
+</button>
+</div>
+</section>
+<!-- Trust / Reassurance Hero Card -->
+<div class="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary via-primary-container to-primary p-4 text-on-primary shadow-sm">
+<div class="flex items-start gap-3">
+<div class="p-2 bg-on-primary/10 rounded-lg shrink-0 mt-0.5 backdrop-blur-sm">
+<span class="material-symbols-outlined text-secondary-container text-[24px]">verified</span>
+</div>
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="inline-block px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-md text-[11px] font-bold">
+              0% COMMISSION • 60 DAYS
+            </span>
+</div>
+<p class="font-body-md text-body-md font-medium text-on-primary-container leading-snug text-sm">
+            Join 1,200+ neighborhood chemists boosting high-margin generic prescription orders.
+          </p>
+<div class="flex items-center gap-3 pt-1 text-xs text-primary-fixed font-medium">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">bolt</span> 24h fast approvals</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">lock</span> Encrypted data</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Multi-Step Section 1: Basic Information (Folded/Verified State) -->
+<section class="bg-surface-container-lowest rounded-xl p-4 shadow-[0_4px_16px_rgba(0,104,95,0.04)] border border-surface-container transition-all">
+<div class="flex items-center justify-between cursor-pointer" onclick="document.getElementById('step1Content').classList.toggle('hidden');">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-container/40 text-secondary flex items-center justify-center font-semibold">
+<span class="material-symbols-outlined text-[20px]">store</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-label-lg text-label-lg font-semibold text-on-surface">Store Identity &amp; Contact</h2>
+<span class="inline-flex items-center gap-0.5 text-[11px] font-semibold text-primary bg-secondary-container/50 px-2 py-0.5 rounded-full">
+<span class="material-symbols-outlined text-[13px]">check_circle</span> Saved
+              </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-xs">Apollo Meds &amp; Wellness • Baner, Pune</p>
+</div>
+</div>
+<button class="text-primary text-sm font-semibold hover:underline flex items-center gap-0.5" type="button">
+          Edit
+          <span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+</div>
+<!-- Expandable form content -->
+<div class="hidden mt-4 pt-4 border-t border-surface-container-high space-y-4" id="step1Content">
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-1">Registered Pharmacy Name</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-outline text-[20px]">local_pharmacy</span>
+<input class="w-full pl-10 pr-3 py-2.5 rounded-lg border border-outline-variant bg-surface-bright focus:border-primary focus:ring-1 focus:ring-primary text-on-surface font-body-md text-body-md" placeholder="e.g. Apollo Meds" type="text" value="Apollo Meds &amp; Wellness"/>
+</div>
+</div>
+<div>
+<div class="flex items-center justify-between mb-1">
+<label class="font-label-md text-label-md text-on-surface">Store Address &amp; Geo-Pin</label>
+<button class="text-xs font-semibold text-primary flex items-center gap-1 hover:underline" type="button">
+<span class="material-symbols-outlined text-[14px]">my_location</span> Auto-detect Location
+            </button>
+</div>
+<div class="relative flex items-start">
+<span class="material-symbols-outlined absolute left-3 top-3 text-outline text-[20px]">location_on</span>
+<textarea class="w-full pl-10 pr-3 py-2.5 rounded-lg border border-outline-variant bg-surface-bright focus:border-primary focus:ring-1 focus:ring-primary text-on-surface font-body-md text-body-md text-sm" rows="2">Shop 4, Ground Floor, Sai Elegance, Baner Road, Pune, MH - 411045</textarea>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-1">Owner / Pharmacist Name</label>
+<input class="w-full px-3 py-2.5 rounded-lg border border-outline-variant bg-surface-bright focus:border-primary focus:ring-1 focus:ring-primary text-on-surface font-body-md text-body-md text-sm" type="text" value="Dr. Rajesh G. Deshmukh"/>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-1">Mobile Contact</label>
+<div class="relative flex items-center">
+<input class="w-full px-3 py-2.5 rounded-lg border border-outline-variant bg-surface-bright focus:border-primary focus:ring-1 focus:ring-primary text-on-surface font-body-md text-body-md text-sm" type="tel" value="+91 98230 45812"/>
+<span class="absolute right-2 px-2 py-0.5 rounded bg-secondary-container text-on-secondary-container text-[11px] font-bold">OTP Verified</span>
+</div>
+</div>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-1">Email for Orders &amp; Invoices</label>
+<input class="w-full px-3 py-2.5 rounded-lg border border-outline-variant bg-surface-bright focus:border-primary focus:ring-1 focus:ring-primary text-on-surface font-body-md text-body-md text-sm" type="email" value="contact@apollomeds-baner.com"/>
+</div>
+</div>
+</section>
+<!-- Multi-Step Section 2: Regulatory & Licenses (Currently Active Step Focus) -->
+<section class="bg-surface-container-lowest rounded-xl p-5 shadow-[0_6px_24px_rgba(0,104,95,0.06)] border-2 border-primary/20 space-y-4">
+<div class="flex items-center justify-between pb-3 border-b border-surface-container">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[24px]">verified_user</span>
+</div>
+<div>
+<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-secondary-container text-on-secondary-container uppercase tracking-wide">Step 2 Active</span>
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">Licenses &amp; Compliance</h2>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary text-[24px]">lock</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+        Indian CDSCO guidelines require valid Form 20B/21B retail pharmacy licenses. Upload clear PDF or high-res photos.
+      </p>
+<!-- Upload Item 1: Drug License 20B / 21B (Mandatory - Uploaded State) -->
+<div class="bg-surface-container-low rounded-xl p-3.5 border border-secondary/30 relative">
+<div class="flex items-start justify-between">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary shadow-xs shrink-0">
+<span class="material-symbols-outlined text-[22px]">description</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Drug License Form 20B &amp; 21B</span>
+<span class="text-[11px] text-error font-bold tracking-tight">*Mandatory</span>
+</div>
+<p class="font-body-sm text-[12px] text-on-surface-variant">Valid till 31 Dec 2026 • Issued by FDA Maharashtra</p>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-error p-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+<!-- File Chip preview -->
+<div class="mt-3 flex items-center justify-between bg-surface-container-lowest rounded-lg p-2.5 border border-outline-variant/60">
+<div class="flex items-center gap-2 overflow-hidden">
+<span class="material-symbols-outlined text-primary text-[20px] shrink-0">picture_as_pdf</span>
+<div class="truncate">
+<p class="font-label-md text-xs font-semibold text-on-surface truncate">DL_MH_2024_Form20B_21B.pdf</p>
+<p class="text-[11px] text-outline">3.2 MB • Scanned original copy</p>
+</div>
+</div>
+<span class="shrink-0 inline-flex items-center gap-1 text-[11px] font-bold text-primary bg-secondary-container/60 px-2 py-0.5 rounded-full">
+<span class="material-symbols-outlined text-[13px]">check</span> Uploaded
+          </span>
+</div>
+</div>
+<!-- Upload Item 2: GST Registration Certificate -->
+<div class="bg-surface-container-low rounded-xl p-3.5 border border-dashed border-outline-variant hover:border-primary transition-colors">
+<div class="flex items-start justify-between mb-2">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-lg bg-surface-container-lowest flex items-center justify-center text-on-surface-variant shadow-xs shrink-0">
+<span class="material-symbols-outlined text-[22px]">receipt_long</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md text-on-surface font-semibold">GSTIN Registration Document</span>
+<span class="text-[11px] text-primary font-medium">Auto-verified</span>
+</div>
+<p class="font-body-sm text-[12px] text-on-surface-variant">27AABCU9603R1ZM (Regular Taxpayer)</p>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 pt-1">
+<button class="flex-1 py-2 px-3 rounded-lg bg-surface-container-lowest border border-outline-variant text-primary font-label-md text-xs flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">file_upload</span>
+            Upload GSTIN Certificate (PDF/JPG)
+          </button>
+</div>
+</div>
+<!-- Upload Item 3: Registered Pharmacist Council Certificate -->
+<div class="bg-surface-container-low rounded-xl p-3.5 border border-dashed border-outline-variant hover:border-primary transition-colors">
+<div class="flex items-start justify-between mb-2">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-lg bg-surface-container-lowest flex items-center justify-center text-on-surface-variant shadow-xs shrink-0">
+<span class="material-symbols-outlined text-[22px]">badge</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md text-on-surface font-semibold">State Pharmacy Council Reg.</span>
+<span class="text-[11px] text-error font-bold">*Mandatory</span>
+</div>
+<p class="font-body-sm text-[12px] text-on-surface-variant">Pharmacist Registration Card (Front &amp; Back)</p>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-1">
+<button class="py-2 px-3 rounded-lg bg-surface-container-lowest border border-outline-variant text-on-surface-variant hover:text-primary font-label-md text-xs flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">photo_camera</span>
+            Take Photo
+          </button>
+<button class="py-2 px-3 rounded-lg bg-surface-container-lowest border border-outline-variant text-on-surface-variant hover:text-primary font-label-md text-xs flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">upload_file</span>
+            Browse Files
+          </button>
+</div>
+</div>
+<!-- Trust reassurance note -->
+<div class="rounded-lg bg-surface-container p-3 flex items-start gap-2.5 text-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-[18px] shrink-0 mt-0.5">verified_user</span>
+<p class="leading-relaxed">
+<strong class="font-semibold text-on-surface">100% Secure &amp; Compliant:</strong> Documents are encrypted with AES-256 and audited exclusively by licensed pharmacists within 24 business hours.
+        </p>
+</div>
+</section>
+<!-- Multi-Step Section 3: Hyperlocal Operations & Delivery Radius -->
+<section class="bg-surface-container-lowest rounded-xl p-4 shadow-[0_4px_16px_rgba(0,104,95,0.04)] border border-surface-container space-y-4">
+<div class="flex items-center justify-between cursor-pointer" onclick="document.getElementById('step3Content').classList.toggle('hidden');">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center font-semibold">
+<span class="material-symbols-outlined text-[20px]">local_shipping</span>
+</div>
+<div>
+<h2 class="font-label-lg text-label-lg font-semibold text-on-surface">Delivery &amp; Timings</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-xs">3.5 km radius • 08:00 AM - 10:30 PM</p>
+</div>
+</div>
+<button class="text-primary text-sm font-semibold hover:underline flex items-center gap-0.5" type="button">
+          Configure
+          <span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+</div>
+<div class="space-y-4 pt-2 border-t border-surface-container-high" id="step3Content">
+<!-- Delivery Radius Selector -->
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-1.5">Hyperlocal Delivery Radius</label>
+<div class="grid grid-cols-3 gap-2">
+<label class="flex flex-col items-center justify-center p-2 rounded-lg border border-outline-variant cursor-pointer hover:border-primary text-center">
+<input class="sr-only" name="radius" type="radio"/>
+<span class="font-label-md text-sm text-on-surface font-semibold">2 km</span>
+<span class="text-[11px] text-outline">Express 30m</span>
+</label>
+<label class="flex flex-col items-center justify-center p-2 rounded-lg border-2 border-primary bg-secondary-container/20 cursor-pointer text-center relative">
+<span class="absolute -top-2 bg-primary text-on-primary text-[9px] font-bold px-1.5 py-0.2 rounded-full">RECOMMENDED</span>
+<input checked="" class="sr-only" name="radius" type="radio"/>
+<span class="font-label-md text-sm text-primary font-bold">3.5 km</span>
+<span class="text-[11px] text-on-secondary-container">Optimal Reach</span>
+</label>
+<label class="flex flex-col items-center justify-center p-2 rounded-lg border border-outline-variant cursor-pointer hover:border-primary text-center">
+<input class="sr-only" name="radius" type="radio"/>
+<span class="font-label-md text-sm text-on-surface font-semibold">5 km</span>
+<span class="text-[11px] text-outline">Extended Area</span>
+</label>
+</div>
+</div>
+<!-- Timings & 24/7 Switch -->
+<div class="pt-2">
+<div class="flex items-center justify-between mb-2">
+<label class="font-label-md text-label-md text-on-surface">Store Operating Hours</label>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-9 h-5 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+<span class="ml-2 font-label-md text-xs text-on-surface font-medium">Open 24/7</span>
+</label>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<div>
+<span class="text-[11px] text-outline block mb-1">Opening Time</span>
+<input class="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-bright text-sm font-semibold" type="time" value="08:00"/>
+</div>
+<div>
+<span class="text-[11px] text-outline block mb-1">Closing Time</span>
+<input class="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-bright text-sm font-semibold" type="time" value="22:30"/>
+</div>
+</div>
+</div>
+<!-- Pharmacy Runner Fleet Toggle -->
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-low border border-outline-variant/60">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-primary text-[20px]">two_wheeler</span>
+<div>
+<p class="font-label-md text-xs font-semibold text-on-surface">Own Delivery Boys / Runner Fleet</p>
+<p class="text-[11px] text-on-surface-variant">We dispatch orders directly using our pharmacy staff</p>
+</div>
+</div>
+<input checked="" class="w-5 h-5 text-primary rounded border-outline-variant focus:ring-primary" type="checkbox"/>
+</div>
+</div>
+</section>
+<!-- Multi-Step Section 4: Bank Payout Details -->
+<section class="bg-surface-container-lowest rounded-xl p-4 shadow-[0_4px_16px_rgba(0,104,95,0.04)] border border-surface-container space-y-4">
+<div class="flex items-center justify-between cursor-pointer" onclick="document.getElementById('step4Content').classList.toggle('hidden');">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center font-semibold">
+<span class="material-symbols-outlined text-[20px]">account_balance</span>
+</div>
+<div>
+<h2 class="font-label-lg text-label-lg font-semibold text-on-surface">Bank &amp; Daily Settlement</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-xs">HDFC Bank • Baner Branch (Auto-verified)</p>
+</div>
+</div>
+<button class="text-primary text-sm font-semibold hover:underline flex items-center gap-0.5" type="button">
+          Review
+          <span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+</div>
+<div class="space-y-3 pt-2 border-t border-surface-container-high" id="step4Content">
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-1 text-xs">Account Holder Name (As per Cheque)</label>
+<input class="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-bright text-sm font-semibold uppercase text-on-surface" type="text" value="APOLLO MEDS ENTERPRISES LLP"/>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-1 text-xs">Current Account No.</label>
+<input class="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-bright text-sm font-semibold text-on-surface" type="password" value="50200084920114"/>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-1 text-xs">IFSC Code</label>
+<input class="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-bright text-sm font-semibold uppercase text-on-surface" type="text" value="HDFC0001844"/>
+</div>
+</div>
+<div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+<span class="text-xs font-semibold text-on-surface">HDFC Bank, Baner High Street Branch</span>
+</div>
+<span class="text-[11px] font-bold text-primary bg-secondary-container px-2 py-0.5 rounded">Penny Drop Verified</span>
+</div>
+</div>
+</section>
+</main>
+<!-- Sticky Bottom Action Bar -->
+<aside class="fixed bottom-0 left-0 right-0 z-40 bg-surface-container-lowest shadow-[0_-4px_20px_rgba(0,104,95,0.08)] border-t border-surface-container-low">
+<div class="w-full max-w-lg mx-auto px-4 py-3">
+<div class="flex items-center gap-3">
+<button class="w-1/3 min-h-[48px] px-3 py-2.5 rounded-xl border border-outline-variant bg-surface-bright text-on-surface font-label-md text-sm font-semibold hover:bg-surface-container-high transition-colors active:scale-95 duration-150" type="button">
+          Save Draft
+        </button>
+<button class="w-2/3 min-h-[48px] px-4 py-2.5 rounded-xl bg-primary text-on-primary font-label-md text-label-lg font-semibold shadow-md hover:bg-primary-container flex items-center justify-center gap-2 transition-all active:scale-95 duration-150" type="button">
+<span>Save &amp; Continue</span>
+<span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+</div>
+<p class="text-[11px] text-center text-outline mt-2 leading-tight">
+        By continuing, you accept the <a class="underline hover:text-primary" href="#">GeniMed Pharmacy Partner Agreement</a> &amp; CDSCO data norms.
+      </p>
+</div>
+</aside>
+</body></html>

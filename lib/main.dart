@@ -3,6 +3,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'auth_service.dart';
 import 'services/medicine_service.dart';
 import 'screens/inventory_screen.dart';
+import 'theme/app_theme.dart';
+import 'screens/screen_showcase_sheet.dart';
+import 'screens/customer/customer_home_screen.dart';
+import 'screens/auth/interactive_login_screen.dart';
 
 // Supabase project credentials
 const String supabaseUrl = 'https://easjbvwjslirocrsobgt.supabase.co';
@@ -37,10 +41,7 @@ class CarePharmaApp extends StatelessWidget {
     return MaterialApp(
       title: 'CarePharma',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0066CC)),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme,
       home: RoleSelectionScreen(
         authService: authService ?? const AuthService(),
         medicineService: medicineService,
@@ -72,6 +73,13 @@ class RoleSelectionScreen extends StatelessWidget {
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.apps, color: Color(0xFF00685F)),
+            tooltip: 'All Screens Directory',
+            onPressed: () => ScreenShowcaseSheet.show(context),
+          ),
+        ],
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -176,6 +184,66 @@ class RoleSelectionScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Divider(height: 1),
+                    const SizedBox(height: 16),
+
+                    // Quick Jump to Customer Marketplace
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const CustomerHomeScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.shopping_bag_outlined, size: 20),
+                        label: const Text(
+                          'Browse Customer App',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Open Interactive Multi-Role Portal
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: TextButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => InteractiveLoginScreen(
+                                authService: authService,
+                                medicineService: medicineService,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.security, size: 18),
+                        label: const Text(
+                          'Open Interactive Role Portal',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+
+                    // All 12 Screens Directory
+                    TextButton.icon(
+                      onPressed: () => ScreenShowcaseSheet.show(context),
+                      icon: const Icon(Icons.grid_view, size: 16),
+                      label: const Text(
+                        'View All 12 Screens Directory',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
@@ -642,7 +710,7 @@ class BlankSuccessScreen extends StatelessWidget {
         ],
       ),
       body: Center(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400),
@@ -689,7 +757,24 @@ class BlankSuccessScreen extends StatelessWidget {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const CustomerHomeScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.shopping_bag_outlined),
+                        label: const Text('Enter Customer Marketplace'),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       height: 46,

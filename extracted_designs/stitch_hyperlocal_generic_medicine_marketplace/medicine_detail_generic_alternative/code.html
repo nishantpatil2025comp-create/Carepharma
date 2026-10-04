@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GeniMed - Generic Medicine Detail</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Atkinson Hyperlegible Next -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-primary-fixed": "#00201d",
+            "on-tertiary-fixed-variant": "#773215",
+            "tertiary-fixed-dim": "#ffb59a",
+            "secondary-fixed": "#71f8e4",
+            "inverse-primary": "#6bd8cb",
+            "surface-container-lowest": "#ffffff",
+            "on-tertiary": "#ffffff",
+            "primary-fixed": "#89f5e7",
+            "on-secondary-fixed-variant": "#005048",
+            "on-primary": "#ffffff",
+            "tertiary": "#924628",
+            "surface-variant": "#e0e3e5",
+            "primary-fixed-dim": "#6bd8cb",
+            "on-error-container": "#93000a",
+            "outline-variant": "#bcc9c6",
+            "on-tertiary-fixed": "#370e00",
+            "error-container": "#ffdad6",
+            "surface-tint": "#006a61",
+            "on-secondary-container": "#006f64",
+            "tertiary-fixed": "#ffdbce",
+            "inverse-on-surface": "#eff1f3",
+            "on-primary-fixed-variant": "#005049",
+            "on-error": "#ffffff",
+            "surface-container-high": "#e6e8ea",
+            "on-surface-variant": "#3d4947",
+            "secondary-fixed-dim": "#4fdbc8",
+            "primary": "#00685f",
+            "on-background": "#191c1e",
+            "surface-container-highest": "#e0e3e5",
+            "inverse-surface": "#2d3133",
+            "on-tertiary-container": "#fffbff",
+            "secondary-container": "#6df5e1",
+            "on-secondary-fixed": "#00201c",
+            "surface-bright": "#f7f9fb",
+            "surface-container-low": "#f2f4f6",
+            "primary-container": "#008378",
+            "outline": "#6d7a77",
+            "surface": "#f7f9fb",
+            "secondary": "#006b5f",
+            "on-surface": "#191c1e",
+            "on-secondary": "#ffffff",
+            "surface-container": "#eceef0",
+            "background": "#f7f9fb",
+            "on-primary-container": "#f4fffc",
+            "tertiary-container": "#b05e3d",
+            "error": "#ba1a1a",
+            "surface-dim": "#d8dadc"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter-md": "1.5rem",
+            "margin-screen": "1.5rem",
+            "gutter-lg": "2rem",
+            "gutter-sm": "0.75rem",
+            "column-span-1": "8.33%",
+            "column-span-6": "50.00%",
+            "column-span-2": "16.66%",
+            "column-span-4": "33.33%",
+            "column-span-12": "100.00%"
+          },
+          "fontFamily": {
+            "label-md": ["Atkinson Hyperlegible Next"],
+            "headline-lg": ["Atkinson Hyperlegible Next"],
+            "label-lg": ["Atkinson Hyperlegible Next"],
+            "body-sm": ["Atkinson Hyperlegible Next"],
+            "headline-md": ["Atkinson Hyperlegible Next"],
+            "display-lg": ["Atkinson Hyperlegible Next"],
+            "body-md": ["Atkinson Hyperlegible Next"],
+            "body-lg": ["Atkinson Hyperlegible Next"],
+            "headline-sm": ["Atkinson Hyperlegible Next"]
+          },
+          "fontSize": {
+            "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+            "label-lg": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "fontWeight": "700" }],
+            "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+    .custom-shadow-soft {
+      box-shadow: 0 8px 24px -4px rgba(0, 104, 95, 0.08);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md antialiased pb-36">
+<!-- TOP APP BAR -->
+<header class="sticky top-0 z-40 bg-surface text-on-surface flex justify-between items-center w-full px-margin-screen py-3 shadow-none transition-all duration-200 border-none">
+<div class="flex items-center space-x-3">
+<button aria-label="Go back" class="p-2 rounded-full hover:bg-surface-variant transition-all duration-200 flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<span class="text-headline-sm font-headline-sm font-bold text-primary">GeniMed</span>
+</div>
+<div class="flex items-center space-x-1">
+<button aria-label="Share medication" class="p-2 rounded-full hover:bg-surface-variant transition-all duration-200 text-on-surface-variant">
+<span class="material-symbols-outlined">share</span>
+</button>
+<button aria-label="Favorite medication" class="p-2 rounded-full hover:bg-surface-variant transition-all duration-200 text-on-surface-variant" id="favorite-btn">
+<span class="material-symbols-outlined" id="favorite-icon">favorite_border</span>
+</button>
+</div>
+</header>
+<main class="max-w-md mx-auto px-4 pt-2 space-y-4">
+<!-- HERO / PRODUCT CARD -->
+<section class="bg-surface-container-lowest rounded-xl p-5 custom-shadow-soft">
+<!-- Top Badge -->
+<div class="flex items-center justify-between mb-4">
+<div class="inline-flex items-center gap-1.5 bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-label-md font-label-md">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span>TOP VALUE CHOICE - 69% CHEAPER</span>
+</div>
+<span class="text-label-md font-label-md bg-surface-container-low text-primary px-2.5 py-0.5 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">eco</span>
+<span>Generic</span>
+</span>
+</div>
+<!-- Medicine Visual Showcase -->
+<div class="relative w-full h-48 bg-surface-container-low rounded-xl overflow-hidden mb-4 flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="A clean, minimalist high-key clinical studio photograph of a certified generic Paracetamol pharmaceutical blister strip resting beside smooth white and light teal capsules on a pure matte surface. The lighting is diffused and soft, embodying a serene, premium medical ambiance dominated by tranquil organic teal accents and sterile bright whites." src="https://lh3.googleusercontent.com/aida-public/AB6AXuClp-SF3MyR-hmiqU1MzeMJyyEpfu4autjZYLR5la-6VkHidXfYt7pXFGKlF6gDUqh3fBsjYDvtqD7vtYh4F72Yw8KaO77MPE79lyL0UgQSRU_M_GQjjCZrVGYzlRUDGTOLprPfe9OEy4orwebyH5ZHf-3i3yMn6pw5YrcBoHveXSvU-loD2chZ5DPVGhirokq-DWDniyGEzXUwle_vWAB4ogG2IvNgJazFoK-N7RVNUDRDv0m57LR9"/>
+<div class="absolute bottom-2 right-2 bg-surface-container-lowest/90 backdrop-blur-md px-2.5 py-1 rounded-lg text-body-sm font-body-sm text-on-surface-variant shadow-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-primary">verified_user</span>
+<span>Lab Tested</span>
+</div>
+</div>
+<!-- Name & Salt Composition -->
+<div class="space-y-1">
+<h1 class="text-headline-sm font-headline-sm text-on-surface tracking-tight">Paracetamol IP 650mg (Genext)</h1>
+<p class="text-body-md font-body-md text-primary font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">science</span>
+<span>Composition: Paracetamol IP 650mg</span>
+</p>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Tablet • 15 Tablets Strip</p>
+<p class="text-body-sm font-body-sm text-outline">Mfr: Genext Pharma Pvt Ltd</p>
+</div>
+<!-- Divider -->
+<div class="h-px bg-surface-container my-4"></div>
+<!-- Pricing Section -->
+<div class="flex items-baseline justify-between">
+<div>
+<div class="flex items-baseline gap-2">
+<span class="text-headline-lg font-headline-lg text-on-surface font-bold">₹18.00</span>
+<span class="text-body-md font-body-md text-outline line-through">₹58.50</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">₹1.20 per tablet</p>
+</div>
+<div class="text-right">
+<span class="inline-block bg-primary text-on-primary text-label-md font-label-md px-2.5 py-1 rounded-lg shadow-sm">
+            You save ₹40.50 (69%)
+          </span>
+<p class="text-[12px] text-outline mt-0.5">vs branded retail cost</p>
+</div>
+</div>
+</section>
+<!-- QUANTITY SELECTOR CARD -->
+<section class="bg-surface-container-lowest rounded-xl p-4 custom-shadow-soft flex items-center justify-between">
+<div>
+<h2 class="text-label-lg font-label-lg text-on-surface">Select Quantity</h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant" id="strip-desc">1 strip (15 tablets)</p>
+</div>
+<div class="flex items-center space-x-3 bg-surface-container-low rounded-xl p-1">
+<button aria-label="Decrease quantity" class="w-10 h-10 rounded-lg flex items-center justify-center bg-surface-container-lowest text-on-surface hover:bg-surface-variant transition-all duration-200 active:scale-95 disabled:opacity-40" id="qty-decrement">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+<span class="text-label-lg font-label-lg text-on-surface min-w-[24px] text-center" id="qty-count">1</span>
+<button aria-label="Increase quantity" class="w-10 h-10 rounded-lg flex items-center justify-center bg-primary text-on-primary hover:bg-primary-container transition-all duration-200 active:scale-95" id="qty-increment">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</section>
+<!-- PHARMACY FULFILLMENT CARD -->
+<section class="bg-surface-container-lowest rounded-xl p-4 custom-shadow-soft space-y-3">
+<div class="flex items-start justify-between">
+<div class="flex items-start space-x-3">
+<div class="w-10 h-10 rounded-xl bg-secondary-container/50 text-primary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined">local_pharmacy</span>
+</div>
+<div>
+<div class="flex items-center gap-1.5">
+<h3 class="text-label-lg font-label-lg text-on-surface">Apollo Diagnostics &amp; Meds</h3>
+<span class="material-symbols-outlined text-primary text-[18px]" style="font-variation-settings: 'FILL' 1;" title="License Verified">check_circle</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant flex items-center gap-2 mt-0.5">
+<span class="flex items-center text-tertiary font-semibold">
+<span class="material-symbols-outlined text-[16px] mr-0.5" style="font-variation-settings: 'FILL' 1;">star</span>
+                4.8
+              </span>
+<span>(120 reviews)</span>
+<span>•</span>
+<span class="text-outline">0.8 km away</span>
+</p>
+</div>
+</div>
+<span class="text-label-md font-label-md text-primary bg-secondary-fixed/40 px-2 py-0.5 rounded-full">In Stock</span>
+</div>
+<div class="bg-surface-container-low rounded-lg p-3 flex items-center justify-between">
+<div class="flex items-center space-x-2 text-body-sm font-body-sm text-on-surface">
+<span class="material-symbols-outlined text-primary text-[20px]">electric_bolt</span>
+<span class="font-semibold">Delivers in 35 mins</span>
+</div>
+<span class="text-body-sm font-body-sm text-on-surface-variant">Express Direct</span>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm text-outline pt-1">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span>CDSCO &amp; State Drug License Verified</span>
+</span>
+<a class="text-primary font-semibold hover:underline" href="#">Change</a>
+</div>
+</section>
+<!-- "WHY THIS WORKS THE SAME" EXPLAINER CARD -->
+<section class="bg-surface-container-lowest rounded-xl p-5 custom-shadow-soft space-y-4">
+<div class="flex items-center space-x-2">
+<div class="w-8 h-8 rounded-lg bg-primary-container text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">health_and_safety</span>
+</div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Why this works the same</h2>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">
+        Generic medicines carry the exact same therapeutic chemical formula as branded counterparts, governed by rigorous pharmacological standards.
+      </p>
+<div class="space-y-3 pt-1">
+<!-- Accordion Item 1 -->
+<div class="border border-surface-variant rounded-xl p-3.5 bg-surface-bright transition-all">
+<div class="flex items-center justify-between cursor-pointer" onclick="toggleAccordion('acc-content-1', 'acc-icon-1')">
+<div class="flex items-center space-x-2.5">
+<span class="material-symbols-outlined text-primary text-[22px]">cloud_upload</span>
+<span class="text-label-md font-label-md text-on-surface">100% Bio-Equivalent Active Salts</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[20px] transition-transform duration-200" id="acc-icon-1">expand_more</span>
+</div>
+<div class="mt-2 text-body-sm font-body-sm text-on-surface-variant pl-8 hidden" id="acc-content-1">
+            Contains identical 650mg pharmaceutical-grade Paracetamol IP with standard absorption rate, bioavailability, and clinical efficacy matching popular name brands.
+          </div>
+</div>
+<!-- Accordion Item 2 -->
+<div class="border border-surface-variant rounded-xl p-3.5 bg-surface-bright transition-all">
+<div class="flex items-center justify-between cursor-pointer" onclick="toggleAccordion('acc-content-2', 'acc-icon-2')">
+<div class="flex items-center space-x-2.5">
+<span class="material-symbols-outlined text-primary text-[22px]">approval_delegation</span>
+<span class="text-label-md font-label-md text-on-surface">WHO-GMP Certified Facility</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[20px] transition-transform duration-200" id="acc-icon-2">expand_more</span>
+</div>
+<div class="mt-2 text-body-sm font-body-sm text-on-surface-variant pl-8 hidden" id="acc-content-2">
+            Manufactured under stringent World Health Organization Good Manufacturing Practices (WHO-GMP), tested in batch-level accredited analytical labs.
+          </div>
+</div>
+<!-- Accordion Item 3 -->
+<div class="border border-surface-variant rounded-xl p-3.5 bg-surface-bright transition-all">
+<div class="flex items-center justify-between cursor-pointer" onclick="toggleAccordion('acc-content-3', 'acc-icon-3')">
+<div class="flex items-center space-x-2.5">
+<span class="material-symbols-outlined text-primary text-[22px]">savings</span>
+<span class="text-label-md font-label-md text-on-surface">Zero Marketing &amp; Ad Markup</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[20px] transition-transform duration-200" id="acc-icon-3">expand_more</span>
+</div>
+<div class="mt-2 text-body-sm font-body-sm text-on-surface-variant pl-8 hidden" id="acc-content-3">
+            Generic alternatives pass direct savings to patients by omitting pharmaceutical representative sales commissions, television advertising, and trademark markups.
+          </div>
+</div>
+</div>
+</section>
+<!-- DISCLAIMER NOTE -->
+<section class="p-3 text-center">
+<div class="inline-flex items-center justify-center gap-1.5 text-outline text-body-sm font-body-sm mb-1">
+<span class="material-symbols-outlined text-[16px]">info</span>
+<span>Regulatory Guidance</span>
+</div>
+<p class="text-[12px] leading-relaxed text-outline max-w-xs mx-auto">
+        Consult your doctor or pharmacist before switching medications. Manufactured under CDSCO guidelines.
+      </p>
+</section>
+</main>
+<!-- STICKY BOTTOM CART BAR -->
+<div class="fixed bottom-16 left-0 w-full z-40 bg-surface-container-lowest/95 backdrop-blur-md px-margin-screen py-3 border-none shadow-[0_-4px_16px_rgba(0,104,95,0.06)]">
+<div class="max-w-md mx-auto flex items-center justify-between gap-4">
+<div>
+<span class="text-body-sm font-body-sm text-outline block">Total for <span id="cart-qty-label">1 strip</span></span>
+<div class="flex items-baseline gap-1.5">
+<span class="text-headline-sm font-headline-sm font-bold text-on-surface" id="total-price">₹18.00</span>
+<span class="text-body-sm font-body-sm text-secondary line-through" id="original-total">₹58.50</span>
+</div>
+</div>
+<button class="flex-1 min-h-[48px] bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg rounded-xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.98] shadow-sm">
+<span class="material-symbols-outlined text-[20px]">shopping_bag</span>
+<span>Add to Cart</span>
+</button>
+</div>
+</div>
+<!-- SHARED COMPONENT: BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center py-2 bg-surface-container-lowest dark:bg-surface shadow-md">
+<!-- Home (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1.5 hover:bg-surface-variant transition-all duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="text-label-md font-label-md">Home</span>
+</a>
+<!-- Appointments (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1.5 hover:bg-surface-variant transition-all duration-200" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="text-label-md font-label-md">Appointments</span>
+</a>
+<!-- Messages (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1.5 hover:bg-surface-variant transition-all duration-200" href="#">
+<span class="material-symbols-outlined">chat</span>
+<span class="text-label-md font-label-md">Messages</span>
+</a>
+<!-- Profile (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1.5 hover:bg-surface-variant transition-all duration-200" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-label-md font-label-md">Profile</span>
+</a>
+</nav>
+<!-- Micro-interactions Script -->
+<script>
+    const unitPrice = 18.00;
+    const originalPrice = 58.50;
+    let quantity = 1;
+
+    const countEl = document.getElementById('qty-count');
+    const stripDescEl = document.getElementById('strip-desc');
+    const totalPriceEl = document.getElementById('total-price');
+    const originalTotalEl = document.getElementById('original-total');
+    const cartQtyLabelEl = document.getElementById('cart-qty-label');
+    const decBtn = document.getElementById('qty-decrement');
+    const incBtn = document.getElementById('qty-increment');
+
+    function updateView() {
+      countEl.textContent = quantity;
+      stripDescEl.textContent = `${quantity} strip${quantity > 1 ? 's' : ''} (${quantity * 15} tablets)`;
+      cartQtyLabelEl.textContent = `${quantity} strip${quantity > 1 ? 's' : ''}`;
+      
+      const currentTotal = (unitPrice * quantity).toFixed(2);
+      const origTotal = (originalPrice * quantity).toFixed(2);
+      
+      totalPriceEl.textContent = `₹${currentTotal}`;
+      originalTotalEl.textContent = `₹${origTotal}`;
+
+      decBtn.disabled = quantity <= 1;
+    }
+
+    incBtn.addEventListener('click', () => {
+      if (quantity < 10) {
+        quantity++;
+        updateView();
+      }
+    });
+
+    decBtn.addEventListener('click', () => {
+      if (quantity > 1) {
+        quantity--;
+        updateView();
+      }
+    });
+
+    // Accordion Toggle
+    function toggleAccordion(contentId, iconId) {
+      const content = document.getElementById(contentId);
+      const icon = document.getElementById(iconId);
+      if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        icon.style.transform = 'rotate(180deg)';
+      } else {
+        content.classList.add('hidden');
+        icon.style.transform = 'rotate(0deg)';
+      }
+    }
+
+    // Favorite button toggle
+    const favBtn = document.getElementById('favorite-btn');
+    const favIcon = document.getElementById('favorite-icon');
+    let isFav = false;
+    favBtn.addEventListener('click', () => {
+      isFav = !isFav;
+      if (isFav) {
+        favIcon.textContent = 'favorite';
+        favIcon.style.fontVariationSettings = "'FILL' 1";
+        favBtn.classList.add('text-primary');
+        favBtn.classList.remove('text-on-surface-variant');
+      } else {
+        favIcon.textContent = 'favorite_border';
+        favIcon.style.fontVariationSettings = "'FILL' 0";
+        favBtn.classList.remove('text-primary');
+        favBtn.classList.add('text-on-surface-variant');
+      }
+    });
+
+    updateView();
+  </script>
+</body></html>
