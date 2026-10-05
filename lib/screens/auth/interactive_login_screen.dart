@@ -3,8 +3,8 @@ import '../../theme/app_colors.dart';
 import '../../auth_service.dart';
 import '../../services/medicine_service.dart';
 import '../customer/customer_home_screen.dart';
-import '../pharmacy/pharmacy_dashboard_screen.dart';
 import '../pharmacy/pharmacy_registration_screen.dart';
+import '../../services/auth_routing_service.dart';
 import '../screen_showcase_sheet.dart';
 
 /// Screen 12: Interactive Multi-Role Login Portal
@@ -76,18 +76,23 @@ class _InteractiveLoginScreenState extends State<InteractiveLoginScreen> {
       _errorMessage = null;
     });
 
+    final authService = widget.authService ?? const AuthService();
     try {
       // Simulate auth or Supabase OTP signin
-      final authService = widget.authService ?? const AuthService();
       await authService.sendOtpCode(email);
     } catch (_) {}
 
     if (!mounted) return;
     setState(() => _isLoading = false);
 
-    Navigator.pushReplacement(
+    final router = AuthRoutingService(
+      authService: authService,
+      medicineService: widget.medicineService,
+    );
+    await router.navigateAfterAuth(
       context,
-      MaterialPageRoute(builder: (_) => const CustomerHomeScreen()),
+      preferredRole: 'user',
+      email: email,
     );
   }
 
@@ -102,17 +107,22 @@ class _InteractiveLoginScreenState extends State<InteractiveLoginScreen> {
       _errorMessage = null;
     });
 
+    final authService = widget.authService ?? const AuthService();
     try {
-      final authService = widget.authService ?? const AuthService();
       await authService.sendOtpCode(email);
     } catch (_) {}
 
     if (!mounted) return;
     setState(() => _isLoading = false);
 
-    Navigator.pushReplacement(
+    final router = AuthRoutingService(
+      authService: authService,
+      medicineService: widget.medicineService,
+    );
+    await router.navigateAfterAuth(
       context,
-      MaterialPageRoute(builder: (_) => const PharmacyDashboardScreen()),
+      preferredRole: 'pharmacist',
+      email: email,
     );
   }
 

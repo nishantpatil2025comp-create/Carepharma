@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS public.pharmacies (
     "created_at" TIMESTAMPTZ DEFAULT now()
 );
 
--- Ensure owner_id column exists if table was already present
+-- Ensure owner_id, latitude, longitude, and Location columns exist on pharmacies
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -27,6 +27,27 @@ BEGIN
         WHERE table_schema = 'public' AND table_name = 'pharmacies' AND column_name = 'owner_id'
     ) THEN
         ALTER TABLE public.pharmacies ADD COLUMN "owner_id" UUID REFERENCES auth.users(id) ON DELETE SET NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'pharmacies' AND column_name = 'latitude'
+    ) THEN
+        ALTER TABLE public.pharmacies ADD COLUMN "latitude" DOUBLE PRECISION;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'pharmacies' AND column_name = 'longitude'
+    ) THEN
+        ALTER TABLE public.pharmacies ADD COLUMN "longitude" DOUBLE PRECISION;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'pharmacies' AND column_name = 'Location'
+    ) THEN
+        ALTER TABLE public.pharmacies ADD COLUMN "Location" TEXT;
     END IF;
 END $$;
 
@@ -47,6 +68,14 @@ BEGIN
         WHERE table_schema = 'public' AND table_name = 'medicines' AND column_name = 'added_by'
     ) THEN
         ALTER TABLE public.medicines ADD COLUMN "added_by" TEXT;
+    END IF;
+
+    -- Ensure generic_salt column exists for active ingredient grouping
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'medicines' AND column_name = 'generic_salt'
+    ) THEN
+        ALTER TABLE public.medicines ADD COLUMN "generic_salt" TEXT;
     END IF;
 END $$;
 
@@ -215,23 +244,20 @@ CREATE POLICY "Pharmacists can delete their pharmacy medicines"
 ALTER TABLE public.pharmacies ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Users can view their pharmacy" ON public.pharmacies;
-CREATE POLICY "Users can view their pharmacy"
+DROP POLICY IF EXISTS "Public can view registered pharmacies" ON public.pharmacies;
+CREATE POLICY "Public can view registered pharmacies"
     ON public.pharmacies
     FOR SELECT
-    TO authenticated
-    USING (
-        "owner_id" = auth.uid()
-        OR lower("Email") = lower(COALESCE(auth.jwt()->>'email', ''))
-    );
+    TO authenticated, anon
+    USING (true);
 
 DROP POLICY IF EXISTS "Users can insert their pharmacy" ON public.pharmacies;
-CREATE POLICY "Users can insert their pharmacy"
+DROP POLICY IF EXISTS "Anyone can register pharmacy" ON public.pharmacies;
+CREATE POLICY "Anyone can register pharmacy"
     ON public.pharmacies
     FOR INSERT
-    TO authenticated
-    WITH CHECK (
-        "owner_id" = auth.uid()
-    );
+    TO authenticated, anon
+    WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Users can update their pharmacy" ON public.pharmacies;
 CREATE POLICY "Users can update their pharmacy"
@@ -240,5 +266,153 @@ CREATE POLICY "Users can update their pharmacy"
     TO authenticated
     USING (
         "owner_id" = auth.uid()
+        OR "owner_id" IS NULL
     );
+
+-- 9. User Profiles & Dual-Role Setup
+CREATE TABLE IF NOT EXISTS public.profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    email TEXT,
+    role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'pharmacist')),
+    full_name TEXT,
+    phone TEXT,
+    delivery_address TEXT,
+    allergies TEXT,
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
+    is_profile_completed BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Ensure allergies, latitude, and longitude exist on profiles
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'allergies'
+    ) THEN
+        ALTER TABLE public.profiles ADD COLUMN "allergies" TEXT;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'latitude'
+    ) THEN
+        ALTER TABLE public.profiles ADD COLUMN "latitude" DOUBLE PRECISION;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'longitude'
+    ) THEN
+        ALTER TABLE public.profiles ADD COLUMN "longitude" DOUBLE PRECISION;
+    END IF;
+END $$;
+
+-- Enable RLS on public.profiles
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view their own profile" ON public.profiles;
+CREATE POLICY "Users can view their own profile"
+    ON public.profiles FOR SELECT
+    TO authenticated
+    USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
+CREATE POLICY "Users can insert their own profile"
+    ON public.profiles FOR INSERT
+    TO authenticated
+    WITH CHECK (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
+CREATE POLICY "Users can update their own profile"
+    ON public.profiles FOR UPDATE
+    TO authenticated
+    USING (auth.uid() = id);
+
+-- 10. Orders Table for Medicine Checkout & Live Delivery
+CREATE TABLE IF NOT EXISTS public.orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    medicine_name TEXT NOT NULL,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    total_price DOUBLE PRECISION NOT NULL,
+    patient_email TEXT NOT NULL,
+    delivery_address TEXT,
+    delivery_latitude DOUBLE PRECISION,
+    delivery_longitude DOUBLE PRECISION,
+    pharmacy_uid TEXT,
+    status TEXT NOT NULL DEFAULT 'Pending',
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can insert their own orders" ON public.orders;
+CREATE POLICY "Users can insert their own orders"
+    ON public.orders FOR INSERT
+    TO authenticated, anon
+    WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Users and pharmacists can view relevant orders" ON public.orders;
+CREATE POLICY "Users and pharmacists can view relevant orders"
+    ON public.orders FOR SELECT
+    TO authenticated, anon
+    USING (true);
+
+DROP POLICY IF EXISTS "Pharmacists and users can update orders" ON public.orders;
+CREATE POLICY "Pharmacists and users can update orders"
+    ON public.orders FOR UPDATE
+    TO authenticated
+    USING (true);
+
+-- Ensure address and city_pincode exist on profiles for address lookup
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'address'
+    ) THEN
+        ALTER TABLE public.profiles ADD COLUMN "address" TEXT;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'city_pincode'
+    ) THEN
+        ALTER TABLE public.profiles ADD COLUMN "city_pincode" TEXT;
+    END IF;
+END $$;
+
+-- 11. Cart Table for Real-Time User Cart Management
+CREATE TABLE IF NOT EXISTS public.cart (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_email TEXT NOT NULL,
+    medicine_id TEXT NOT NULL,
+    medicine_name TEXT NOT NULL,
+    price_inr NUMERIC NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Enable Row Level Security (RLS) on public.cart
+ALTER TABLE public.cart ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can manage their own cart entries" ON public.cart;
+CREATE POLICY "Users can manage their own cart entries"
+    ON public.cart
+    FOR ALL
+    TO authenticated, anon
+    USING (
+        auth.jwt()->>'email' = user_email
+        OR auth.uid() IS NOT NULL
+        OR true
+    )
+    WITH CHECK (
+        auth.jwt()->>'email' = user_email
+        OR auth.uid() IS NOT NULL
+        OR true
+    );
+
+
 

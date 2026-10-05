@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'customer/customer_home_screen.dart';
+import 'customer/user_onboarding_screen.dart';
 import 'customer/search_results_screen.dart';
 import 'customer/medicine_detail_screen.dart';
 import 'customer/cart_checkout_screen.dart';
 import 'customer/upload_prescription_screen.dart';
 import 'customer/map_nearby_pharmacies_screen.dart';
+import 'customer/nearby_pharmacies_screen.dart';
+import 'customer/generic_alternatives_screen.dart';
 import 'customer/live_order_tracking_screen.dart';
 import 'pharmacy/pharmacy_registration_screen.dart';
+import 'pharmacy/add_pharmacy_screen.dart';
 import 'pharmacy/pharmacy_dashboard_screen.dart';
 import 'pharmacy/pharmacy_inventory_screen.dart';
+import 'pharmacy/pharmacist_inventory_screen.dart';
 import 'pharmacy/pharmacy_self_delivery_screen.dart';
 import 'auth/interactive_login_screen.dart';
 
@@ -93,6 +98,13 @@ class ScreenShowcaseSheet extends StatelessWidget {
                 ),
                 _buildScreenTile(
                   context,
+                  title: '1b. User Onboarding & Profile Setup',
+                  subtitle: 'Tailored first-time patient setup (Name, Phone, Delivery Address, Allergies)',
+                  icon: Icons.person_add_alt_1,
+                  routeBuilder: (_) => const UserOnboardingScreen(initialEmail: 'demo.user@carepharma.com'),
+                ),
+                _buildScreenTile(
+                  context,
                   title: '2. Search & Generic Results',
                   subtitle: 'Branded benchmark, salt equivalence, generic alternatives list',
                   icon: Icons.search,
@@ -128,19 +140,40 @@ class ScreenShowcaseSheet extends StatelessWidget {
                 ),
                 _buildScreenTile(
                   context,
+                  title: '6b. GPS Nearby Pharmacies List',
+                  subtitle: 'Fetches store coords from Supabase, calculates GPS distance via geolocator, sorts by proximity',
+                  icon: Icons.near_me,
+                  routeBuilder: (_) => const NearbyPharmaciesScreen(),
+                ),
+                _buildScreenTile(
+                  context,
+                  title: '2b. Generic Salt & Alternatives Explorer',
+                  subtitle: 'Groups branded & generic medications by generic salt molecule categories with savings',
+                  icon: Icons.science,
+                  routeBuilder: (_) => const GenericAlternativesScreen(),
+                ),
+                _buildScreenTile(
+                  context,
                   title: '7. Live Order Tracking',
                   subtitle: '5-stage live stepper, store runner card, route map, cold-chain tag',
                   icon: Icons.delivery_dining,
                   routeBuilder: (_) => const LiveOrderTrackingScreen(),
                 ),
                 const SizedBox(height: 16),
-                _buildSectionHeader('Pharmacy Partner Portal (4 Screens)'),
+                _buildSectionHeader('Pharmacy Partner Portal (6 Screens)'),
                 _buildScreenTile(
                   context,
                   title: '8. Pharmacy Partner Registration',
                   subtitle: '4-step onboarding, drug license Form 20/21, delivery operations',
                   icon: Icons.app_registration,
                   routeBuilder: (_) => const PharmacyRegistrationScreen(),
+                ),
+                _buildScreenTile(
+                  context,
+                  title: '8b. Register / Add Pharmacy Form',
+                  subtitle: 'Direct Supabase form with GPS coordinates capture (lat/lon) via geolocator',
+                  icon: Icons.add_business,
+                  routeBuilder: (_) => const AddPharmacyScreen(),
                 ),
                 _buildScreenTile(
                   context,
@@ -155,6 +188,13 @@ class ScreenShowcaseSheet extends StatelessWidget {
                   subtitle: 'Stock catalog, live Supabase CRUD, low stock alerts, add medicine',
                   icon: Icons.inventory_2,
                   routeBuilder: (_) => const PharmacyInventoryScreen(),
+                ),
+                _buildScreenTile(
+                  context,
+                  title: '10b. Real-Time Search Pharmacist Inventory',
+                  subtitle: 'Local real-time inventory search filtering by brand name & generic salt composition',
+                  icon: Icons.search_rounded,
+                  routeBuilder: (_) => const PharmacistInventoryScreen(),
                 ),
                 _buildScreenTile(
                   context,

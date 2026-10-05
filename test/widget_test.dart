@@ -75,6 +75,24 @@ class TestMedicineService implements IMedicineService {
   Future<void> deleteMedicine(String uid) async {
     _medicines.removeWhere((m) => m.uid == uid);
   }
+
+  @override
+  Future<List<Medicine>> fetchCustomerMedicines({String? query, String? genericSalt}) async {
+    var list = List<Medicine>.from(_medicines);
+    if (query != null && query.trim().isNotEmpty) {
+      final q = query.trim().toLowerCase();
+      list = list.where((m) =>
+        m.name.toLowerCase().contains(q) ||
+        (m.genericSalt?.toLowerCase().contains(q) ?? false) ||
+        m.type.toLowerCase().contains(q)
+      ).toList();
+    }
+    if (genericSalt != null && genericSalt.trim().isNotEmpty) {
+      final s = genericSalt.trim().toLowerCase();
+      list = list.where((m) => m.genericSalt?.toLowerCase().contains(s) ?? false).toList();
+    }
+    return list;
+  }
 }
 
 void main() {
@@ -91,6 +109,7 @@ void main() {
 
     await tester.pumpWidget(CarePharmaApp(
       medicineService: testMedicineService,
+      useDualRoleRouting: false,
     ));
     await tester.pumpAndSettle();
 

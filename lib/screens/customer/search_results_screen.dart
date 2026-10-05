@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../../models/medicine.dart';
+import '../../services/medicine_service.dart';
+import '../../services/cart_service.dart';
+import '../../widgets/order_dialog.dart';
 import 'medicine_detail_screen.dart';
-import 'cart_checkout_screen.dart';
+import 'cart_screen.dart';
 import 'map_nearby_pharmacies_screen.dart';
+import 'generic_alternatives_screen.dart';
 
 /// Screen 2: Search Results with Generic Alternatives Benchmark
 class SearchResultsScreen extends StatefulWidget {
   const SearchResultsScreen({
     super.key,
-    this.initialQuery = 'Crocin Advanced 650mg',
+    this.initialQuery = '',
   });
 
   final String initialQuery;
@@ -19,13 +24,58 @@ class SearchResultsScreen extends StatefulWidget {
 
 class _SearchResultsScreenState extends State<SearchResultsScreen> {
   late TextEditingController _searchController;
-  int _cartCount = 2;
+  final MedicineService _medicineService = const MedicineService();
+  final CartService _cartService = const CartService();
+  List<Medicine> _searchResults = [];
+  bool _isLoading = false;
+  bool _hasSearched = false;
+  int _cartCount = 0;
   String _selectedFilter = 'All';
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController(text: widget.initialQuery);
+    _loadCartCount();
+    if (widget.initialQuery.trim().isNotEmpty) {
+      _performSearch(widget.initialQuery.trim());
+    }
+  }
+
+  Future<void> _loadCartCount() async {
+    try {
+      final items = await _cartService.fetchCartItems();
+      if (mounted) setState(() => _cartCount = items.length);
+    } catch (_) {}
+  }
+
+  Future<void> _performSearch(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) {
+      setState(() {
+        _searchResults = [];
+        _hasSearched = false;
+        _isLoading = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _hasSearched = true;
+    });
+
+    try {
+      final results = await _medicineService.fetchCustomerMedicines(query: trimmed);
+      if (mounted) {
+        setState(() {
+          _searchResults = results;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -34,24 +84,33 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     super.dispose();
   }
 
-  void _addToCart(String medicineName) {
+  Future<void> _addToCart(String medicineName, {Medicine? medicineModel, double? price}) async {
     setState(() => _cartCount++);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$medicineName added to cart!'),
-        backgroundColor: AppColors.primary,
-        action: SnackBarAction(
-          label: 'View Cart',
-          textColor: AppColors.secondaryFixed,
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const CartCheckoutScreen()),
-            );
-          },
+    try {
+      await _cartService.addToCart(
+        medicineId: medicineModel?.uid ?? medicineName,
+        medicineName: medicineName,
+        price: medicineModel?.priceInr ?? price ?? 18.0,
+      );
+    } catch (_) {}
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$medicineName added to cart!'),
+          backgroundColor: AppColors.primary,
+          action: SnackBarAction(
+            label: 'View Cart',
+            textColor: AppColors.secondaryFixed,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CartScreen()),
+              );
+            },
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   @override
@@ -76,6 +135,12 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           ),
           child: TextField(
             controller: _searchController,
+            onSubmitted: (query) => _performSearch(query),
+            onChanged: (query) {
+              if (query.isEmpty || query.length >= 2) {
+                _performSearch(query);
+              }
+            },
             decoration: InputDecoration(
               hintText: 'Search Medicine...',
               prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.primary),
@@ -84,6 +149,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                       icon: const Icon(Icons.cancel, size: 18, color: AppColors.outline),
                       onPressed: () {
                         setState(() => _searchController.clear());
+                        _performSearch('');
                       },
                     )
                   : null,
@@ -103,7 +169,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const CartCheckoutScreen()),
+                    MaterialPageRoute(builder: (_) => const CartScreen()),
                   );
                 },
               ),
@@ -196,209 +262,191 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Branded Reference Benchmark Section
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.6)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(Icons.medication, color: AppColors.onSurfaceVariant, size: 24),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Wrap(
-                              spacing: 6,
-                              runSpacing: 2,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                const Text(
-                                  'Crocin Advanced 650mg',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.surfaceContainerHighest,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: const Text(
-                                    'ORIGINAL BRANDED',
-                                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.5),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 2),
-                            const Text(
-                              'GlaxoSmithKline Pharmaceuticals • 15 Tablets Strip',
-                              style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
-                            ),
-                            const SizedBox(height: 2),
-                            const Text(
-                              'Active Salt: Paracetamol IP (650mg)',
-                              style: TextStyle(fontSize: 12, color: AppColors.outline),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+            if (_searchResults.isNotEmpty) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF86EFAC)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.science, size: 20, color: Color(0xFF16A34A)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Standard MRP', style: TextStyle(fontSize: 11, color: AppColors.outline)),
-                          const Text(
-                            '₹58.50',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              decoration: TextDecoration.lineThrough,
-                              color: AppColors.outline,
-                            ),
-                          ),
                           Text(
-                            '(₹3.90/tab)',
-                            style: TextStyle(fontSize: 11, color: AppColors.outline.withValues(alpha: 0.8)),
+                            _searchResults.first.genericSalt != null && _searchResults.first.genericSalt!.isNotEmpty
+                                ? 'Generic Salt: ${_searchResults.first.genericSalt}'
+                                : 'Generic Bio-Equivalent Alternatives',
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF166534)),
+                          ),
+                          const Text(
+                            'Branded alternatives mapped below share identical bio-availability',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF15803D)),
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  const Divider(height: 1),
-                  const SizedBox(height: 8),
-                  const Row(
-                    children: [
-                      Icon(Icons.verified_user, size: 16, color: AppColors.primary),
-                      SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          'Exact same active chemical molecule & therapeutic bio-efficacy',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const GenericAlternativesScreen()),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                    ],
+                      child: const Text('View All Salts ›', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF166534))),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            if (_isLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(40),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (!_hasSearched || _searchController.text.trim().isEmpty)
+              Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+                ),
+                child: Column(
+                  children: [
+                    Icon(Icons.manage_search, size: 54, color: AppColors.outline),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Search Medicines & Generics',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Type a medicine name or generic salt to search live inventory.',
+                      style: TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              )
+            else if (_searchResults.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+                ),
+                child: Column(
+                  children: [
+                    const Icon(Icons.medication_liquid_outlined, size: 48, color: AppColors.outline),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No medicines found for "${_searchController.text}"',
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Try searching for different active salts or brand names in our catalog.',
+                      style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              )
+            else ...[
+              // Generic Alternatives Heading & Savings Summary
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Identified Generic Substitutes (${_searchResults.length})',
+                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'All verified alternatives matching "${_searchController.text}"',
+                          style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.secondaryContainer.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.savings, size: 15, color: AppColors.secondary),
+                        SizedBox(width: 4),
+                        Text(
+                          'Save up to 60%',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 20),
-
-            // Generic Alternatives Heading & Savings Summary
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Identified Generic Substitutes (4)',
-                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        'All verified generic equivalents with Paracetamol IP 650mg',
-                        style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
-                      ),
-                    ],
+              const SizedBox(height: 12),
+              ..._searchResults.asMap().entries.map((entry) {
+                final index = entry.key;
+                final med = entry.value;
+                final double mrp = (med.priceInr * 1.6).roundToDouble();
+                final double savingsVal = mrp - med.priceInr;
+                final int savingsPct = ((savingsVal / mrp) * 100).round();
+                final badgeTag = index == 0
+                    ? 'TOP VALUE CHOICE'
+                    : (index == 1
+                        ? 'POPULAR REPLACEMENT'
+                        : (index == 2 ? 'JAN AUSHADHI VERIFIED' : 'GENERIC EQUIVALENT'));
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _buildGenericMedicineCard(
+                    name: med.name,
+                    composition: med.genericSalt != null && med.genericSalt!.isNotEmpty
+                        ? 'Composition: ${med.genericSalt} • ${med.type}'
+                        : 'Dosage Form: ${med.type}',
+                    manufacturer: med.manufacturer.isNotEmpty ? med.manufacturer : 'CarePharma Lab',
+                    packSize: 'Standard Unit Strip',
+                    pharmacyName: 'CarePharma Partner Network',
+                    pharmacyDistance: 'Hyperlocal Store',
+                    deliveryETA: 'Same Day Delivery',
+                    price: med.priceInr,
+                    mrp: mrp,
+                    savingsPercent: '$savingsPct%',
+                    savingsInr: '₹${savingsVal.toStringAsFixed(2)}',
+                    perTabPrice: '₹${(med.priceInr / 10).toStringAsFixed(2)}',
+                    inStockCount: med.stock,
+                    badgeTag: badgeTag,
+                    isTopChoice: index == 0,
+                    medicineModel: med,
                   ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.secondaryContainer.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.savings, size: 15, color: AppColors.secondary),
-                      SizedBox(width: 4),
-                      Text(
-                        'Save up to ₹40.50',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.secondary),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Card 1: Top Recommended Genext
-            _buildGenericMedicineCard(
-              name: 'Paracetamol IP 650mg (Genext)',
-              composition: 'Composition: Paracetamol IP 650mg • Tablet',
-              manufacturer: 'Genext Pharma Pvt Ltd',
-              packSize: '15 Tablets strip',
-              pharmacyName: 'Apollo Diagnostics & Meds',
-              pharmacyDistance: '0.8 km',
-              deliveryETA: '35 mins',
-              price: 18.00,
-              mrp: 58.50,
-              savingsPercent: '69%',
-              savingsInr: '₹40.50',
-              perTabPrice: '₹1.20',
-              inStockCount: 38,
-              badgeTag: 'TOP VALUE CHOICE',
-              isTopChoice: true,
-            ),
-            const SizedBox(height: 12),
-
-            // Card 2: Paracip 650
-            _buildGenericMedicineCard(
-              name: 'Paracip 650 (Cipla Generic)',
-              composition: 'Composition: Paracetamol IP 650mg • Tablet',
-              manufacturer: 'Cipla Therapeutics',
-              packSize: '15 Tablets strip',
-              pharmacyName: 'MedLife Generic Care',
-              pharmacyDistance: '1.1 km',
-              deliveryETA: '25 mins',
-              price: 21.00,
-              mrp: 58.50,
-              savingsPercent: '64%',
-              savingsInr: '₹37.50',
-              perTabPrice: '₹1.40',
-              inStockCount: 14,
-              badgeTag: 'POPULAR REPLACEMENT',
-              isTopChoice: false,
-            ),
-            const SizedBox(height: 12),
-
-            // Card 3: P-650
-            _buildGenericMedicineCard(
-              name: 'P-650 Generic Tablet',
-              composition: 'Composition: Paracetamol IP 650mg • Tablet',
-              manufacturer: 'Apex Laboratories',
-              packSize: '15 Tablets strip',
-              pharmacyName: 'Apollo Jan Aushadhi',
-              pharmacyDistance: '2.4 km',
-              deliveryETA: '45 mins',
-              price: 24.00,
-              mrp: 58.50,
-              savingsPercent: '59%',
-              savingsInr: '₹34.50',
-              perTabPrice: '₹1.60',
-              inStockCount: 22,
-              badgeTag: 'JAN AUSHADHI VERIFIED',
-              isTopChoice: false,
-            ),
+                );
+              }),
+            ],
           ],
         ),
       ),
@@ -449,6 +497,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     required int inStockCount,
     required String badgeTag,
     required bool isTopChoice,
+    Medicine? medicineModel,
   }) {
     return InkWell(
       onTap: () {
@@ -641,15 +690,39 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton.icon(
-                  onPressed: () => _addToCart(name),
-                  icon: const Icon(Icons.add_shopping_cart, size: 16),
-                  label: const Text('Add'),
+                  onPressed: () => _addToCart(name, medicineModel: medicineModel, price: price),
+                  icon: const Icon(Icons.add_shopping_cart, size: 14),
+                  label: const Text('Add to Cart', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    minimumSize: Size.zero,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                ElevatedButton(
+                  onPressed: () {
+                    showOrderDialog(
+                      context,
+                      medicineModel != null
+                          ? medicineModel.toJson()
+                          : {
+                              'name': name,
+                              'price_inr': price,
+                              'generic_salt': composition,
+                            },
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.onPrimary,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    minimumSize: Size.zero,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
+                  child: const Text('Order Now', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),

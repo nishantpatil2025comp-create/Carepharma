@@ -28,6 +28,7 @@ class _MedicineDialogState extends State<MedicineDialog> {
   late final TextEditingController _stockController;
   late final TextEditingController _manufacturerController;
   late final TextEditingController _expiryController;
+  late final TextEditingController _genericSaltController;
 
   late String _selectedType;
   bool _isLoading = false;
@@ -57,6 +58,7 @@ class _MedicineDialogState extends State<MedicineDialog> {
     );
     _manufacturerController = TextEditingController(text: med?.manufacturer ?? '');
     _expiryController = TextEditingController(text: med?.expiryDate ?? '');
+    _genericSaltController = TextEditingController(text: med?.genericSalt ?? '');
 
     _selectedType = (med != null && _formulationTypes.contains(med.type))
         ? med.type
@@ -70,6 +72,7 @@ class _MedicineDialogState extends State<MedicineDialog> {
     _stockController.dispose();
     _manufacturerController.dispose();
     _expiryController.dispose();
+    _genericSaltController.dispose();
     super.dispose();
   }
 
@@ -103,6 +106,9 @@ class _MedicineDialogState extends State<MedicineDialog> {
         manufacturer: _manufacturerController.text.trim(),
         expiryDate: _expiryController.text.trim(),
         pharmacyUid: widget.existingMedicine?.pharmacyUid,
+        genericSalt: _genericSaltController.text.trim().isNotEmpty
+            ? _genericSaltController.text.trim()
+            : null,
       );
 
       await widget.onSave(medicine);
@@ -209,6 +215,18 @@ class _MedicineDialogState extends State<MedicineDialog> {
                     }
                     return null;
                   },
+                ),
+                const SizedBox(height: 16),
+
+                // 1b. Generic Salt / Active Molecule
+                TextFormField(
+                  controller: _genericSaltController,
+                  decoration: const InputDecoration(
+                    labelText: 'Generic Salt / Active Molecule (Optional)',
+                    hintText: 'e.g. Paracetamol IP 650mg, Amoxicillin 500mg',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.science_outlined),
+                  ),
                 ),
                 const SizedBox(height: 16),
 

@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../theme/app_colors.dart';
-import '../screen_showcase_sheet.dart';
-import 'search_results_screen.dart';
-import 'medicine_detail_screen.dart';
-import 'cart_checkout_screen.dart';
+import '../../models/pharmacy.dart';
+import '../../services/pharmacy_service.dart';
+import '../../services/cart_service.dart';
+import '../../auth_service.dart';
+import 'medicine_search_screen.dart';
+import 'real_nearby_pharmacies_screen.dart';
+import 'cart_screen.dart';
 import 'upload_prescription_screen.dart';
-import 'map_nearby_pharmacies_screen.dart';
 import 'live_order_tracking_screen.dart';
+import 'user_profile_screen.dart';
+import '../../services/map_launcher_service.dart';
 
 /// Screen 1: Customer Home Screen from stitch designs
 class CustomerHomeScreen extends StatefulWidget {
@@ -20,6 +25,93 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   int _currentNavIndex = 0;
   String _currentLocation = 'Baner, Pune';
   final TextEditingController _searchController = TextEditingController();
+  final PharmacyService _pharmacyService = const PharmacyService();
+  final AuthService _authService = const AuthService();
+  final CartService _cartService = const CartService();
+  List<Pharmacy> _nearbyPharmacies = [];
+  bool _isLoadingPharmacies = true;
+  int _cartCount = 0;
+  double? _userLat;
+  double? _userLng;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLocationAndPharmacies();
+    _loadCartCount();
+  }
+
+  Future<void> _loadCartCount() async {
+    try {
+      final items = await _cartService.fetchCartItems();
+      if (mounted) {
+        setState(() => _cartCount = items.length);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _loadLocationAndPharmacies() async {
+    try {
+      final profile = await _authService.getUserProfile();
+      if (profile != null) {
+        if (profile.deliveryAddress != null && profile.deliveryAddress!.isNotEmpty) {
+          if (mounted) setState(() => _currentLocation = profile.deliveryAddress!);
+        }
+        if (profile.latitude != null && profile.longitude != null) {
+          _userLat = profile.latitude;
+          _userLng = profile.longitude;
+        }
+      }
+    } catch (_) {}
+
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled().timeout(
+        const Duration(milliseconds: 500),
+        onTimeout: () => false,
+      );
+      if (serviceEnabled) {
+        final perm = await Geolocator.checkPermission().timeout(
+          const Duration(milliseconds: 500),
+          onTimeout: () => LocationPermission.denied,
+        );
+        if (perm == LocationPermission.always || perm == LocationPermission.whileInUse) {
+          Position? pos;
+          try {
+            pos = await Geolocator.getCurrentPosition(
+              locationSettings: const LocationSettings(timeLimit: Duration(seconds: 3)),
+            );
+          } catch (_) {
+            pos = await Geolocator.getLastKnownPosition().timeout(
+              const Duration(seconds: 2),
+              onTimeout: () => null,
+            );
+          }
+          if (pos != null) {
+            final capturedPos = pos;
+            _userLat = capturedPos.latitude;
+            _userLng = capturedPos.longitude;
+            if (mounted && _currentLocation == 'Baner, Pune') {
+              setState(() {
+                _currentLocation = 'GPS (${capturedPos.latitude.toStringAsFixed(3)}, ${capturedPos.longitude.toStringAsFixed(3)})';
+              });
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    try {
+      final stores = await _pharmacyService.fetchPharmacies(userLat: _userLat, userLng: _userLng);
+      if (mounted) {
+        setState(() {
+          _nearbyPharmacies = stores;
+          _isLoadingPharmacies = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingPharmacies = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -31,9 +123,93 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => SearchResultsScreen(initialQuery: query.isNotEmpty ? query : 'Crocin Advanced 650mg'),
+        builder: (_) => MedicineSearchScreen(initialQuery: query),
       ),
-    );
+    ).then((_) => _loadCartCount());
+  }
+
+  Future<void> _fetchGpsLocation() async {
+    try {
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Acquiring live GPS location...'), duration: Duration(seconds: 1)),
+      );
+
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled().timeout(
+        const Duration(milliseconds: 500),
+        onTimeout: () => false,
+      );
+      if (!serviceEnabled) {
+        if (mounted) {
+          messenger.showSnackBar(
+            const SnackBar(content: Text('Please enable GPS location services on your device.')),
+          );
+        }
+        return;
+      }
+
+      var perm = await Geolocator.checkPermission().timeout(
+        const Duration(milliseconds: 500),
+        onTimeout: () => LocationPermission.denied,
+      );
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission().timeout(
+          const Duration(seconds: 2),
+          onTimeout: () => LocationPermission.denied,
+        );
+      }
+      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
+        if (mounted) {
+          messenger.showSnackBar(
+            const SnackBar(content: Text('Location permission denied.')),
+          );
+        }
+        return;
+      }
+
+      Position? pos;
+      try {
+        pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(timeLimit: Duration(seconds: 4)),
+        );
+      } catch (_) {
+        pos = await Geolocator.getLastKnownPosition().timeout(
+          const Duration(seconds: 2),
+          onTimeout: () => null,
+        );
+      }
+
+      if (pos != null) {
+        final currentPos = pos;
+        if (mounted) {
+          setState(() {
+            _userLat = currentPos.latitude;
+            _userLng = currentPos.longitude;
+            _currentLocation = 'GPS: ${currentPos.latitude.toStringAsFixed(4)}, ${currentPos.longitude.toStringAsFixed(4)}';
+            _isLoadingPharmacies = true;
+          });
+        }
+        final stores = await _pharmacyService.fetchPharmacies(userLat: currentPos.latitude, userLng: currentPos.longitude);
+        if (mounted) {
+          setState(() {
+            _nearbyPharmacies = stores;
+            _isLoadingPharmacies = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          messenger.showSnackBar(
+            const SnackBar(content: Text('Could not determine GPS coordinates. Please try again.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not get GPS location: $e')),
+        );
+      }
+    }
   }
 
   void _openLocationSelector() {
@@ -55,27 +231,31 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             const SizedBox(height: 12),
             ListTile(
               leading: const Icon(Icons.my_location, color: AppColors.primary),
-              title: const Text('Baner, Pune (Current)'),
-              subtitle: const Text('Flat 402, Green Glen Apts'),
+              title: const Text('Use Live GPS Location'),
+              subtitle: Text(_userLat != null ? '${_userLat!.toStringAsFixed(4)}, ${_userLng!.toStringAsFixed(4)}' : 'Detect via device GPS sensors'),
+              trailing: const Icon(Icons.gps_fixed, color: AppColors.primary),
+              onTap: () {
+                Navigator.pop(ctx);
+                _fetchGpsLocation();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.person_pin_circle_outlined, color: AppColors.primary),
+              title: const Text('Saved Profile Address'),
+              subtitle: Text(_currentLocation),
               trailing: const Icon(Icons.check, color: AppColors.primary),
-              onTap: () {
-                setState(() => _currentLocation = 'Baner, Pune');
-                Navigator.pop(ctx);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.location_on_outlined, color: AppColors.outline),
-              title: const Text('Aundh, Pune'),
-              subtitle: const Text('Office #12, IT Park'),
-              onTap: () {
-                setState(() => _currentLocation = 'Aundh, Pune');
-                Navigator.pop(ctx);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.add, color: AppColors.primary),
-              title: const Text('Add new address'),
               onTap: () => Navigator.pop(ctx),
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit_location_alt_outlined, color: AppColors.outline),
+              title: const Text('Edit Address in Profile'),
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const UserProfileScreen()),
+                ).then((_) => _loadLocationAndPharmacies());
+              },
             ),
           ],
         ),
@@ -148,11 +328,16 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             ),
           ),
           actions: [
-            // Screen directory button
+            // User Profile
             IconButton(
-              icon: const Icon(Icons.apps, color: AppColors.primary),
-              tooltip: 'All Screens Directory',
-              onPressed: () => ScreenShowcaseSheet.show(context),
+              icon: const Icon(Icons.person_outline, color: AppColors.primary),
+              tooltip: 'User Profile & Settings',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const UserProfileScreen()),
+                ).then((_) => _loadLocationAndPharmacies());
+              },
             ),
             // Cart badge
             Padding(
@@ -165,31 +350,32 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const CartCheckoutScreen()),
-                      );
+                        MaterialPageRoute(builder: (_) => const CartScreen()),
+                      ).then((_) => _loadCartCount());
                     },
                   ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                      child: const Text(
-                        '2',
-                        style: TextStyle(
-                          color: AppColors.onPrimary,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                  if (_cartCount > 0)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
                         ),
-                        textAlign: TextAlign.center,
+                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                        child: Text(
+                          '$_cartCount',
+                          style: const TextStyle(
+                            color: AppColors.onPrimary,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -220,7 +406,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                   controller: _searchController,
                   onSubmitted: _navigateToSearch,
                   decoration: InputDecoration(
-                    hintText: 'Search for medicine, e.g. Crocin, Dolo 650',
+                    hintText: 'Search for medicine or generic salt...',
                     hintStyle: const TextStyle(fontSize: 14, color: AppColors.outline),
                     prefixIcon: const Icon(Icons.search, color: AppColors.primary),
                     suffixIcon: Row(
@@ -228,7 +414,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.mic, color: AppColors.primary, size: 20),
-                          onPressed: () => _navigateToSearch('Paracetamol 650mg'),
+                          onPressed: () => _navigateToSearch(''),
                         ),
                       ],
                     ),
@@ -349,7 +535,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
-                      onPressed: () => _navigateToSearch('Crocin Advanced 650mg'),
+                      onPressed: () => _navigateToSearch(''),
                       icon: const Text(
                         'Compare Now',
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
@@ -438,46 +624,6 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
               ),
             ),
 
-            // Popular Categories
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Popular Categories',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.onSurface),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () => _navigateToSearch(''),
-                    child: const Text(
-                      'View all',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(
-              height: 98,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                children: [
-                  _buildCategoryItem('Pain Relief', Icons.healing, 'Paracetamol'),
-                  _buildCategoryItem('Diabetes', Icons.bloodtype, 'Metformin'),
-                  _buildCategoryItem('Fever', Icons.thermostat, 'Crocin'),
-                  _buildCategoryItem('Skin Care', Icons.spa, 'Ointment'),
-                  _buildCategoryItem('Cardiac', Icons.favorite, 'Amlodipine'),
-                  _buildCategoryItem('Stomach', Icons.medical_services, 'Pantoprazole'),
-                ],
-              ),
-            ),
-
             // Pharmacies Near You Section
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
@@ -504,12 +650,12 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const MapNearbyPharmaciesScreen()),
+                        MaterialPageRoute(builder: (_) => const RealNearbyPharmaciesScreen()),
                       );
                     },
                     child: const Row(
                       children: [
-                        Icon(Icons.map, size: 16, color: AppColors.primary),
+                        Icon(Icons.near_me, size: 16, color: AppColors.primary),
                         SizedBox(width: 4),
                         Text(
                           'View on map',
@@ -523,138 +669,36 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             ),
             SizedBox(
               height: 160,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                children: [
-                  _buildPharmacyCard(
-                    name: 'HealthPlus Pharmacy',
-                    rating: '4.8',
-                    reviews: '120+',
-                    distance: '1.2 km',
-                    deliveryTime: '35 mins',
-                  ),
-                  _buildPharmacyCard(
-                    name: 'MedLife Generic Care',
-                    rating: '4.9',
-                    reviews: '340+',
-                    distance: '0.8 km',
-                    deliveryTime: '25 mins',
-                  ),
-                  _buildPharmacyCard(
-                    name: 'Apollo Jan Aushadhi',
-                    rating: '4.7',
-                    reviews: '85',
-                    distance: '2.4 km',
-                    deliveryTime: '45 mins',
-                  ),
-                ],
-              ),
+              child: _isLoadingPharmacies
+                  ? const Center(child: CircularProgressIndicator())
+                  : _nearbyPharmacies.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'No registered pharmacies found in your proximity.',
+                            style: TextStyle(color: AppColors.outline, fontSize: 13),
+                          ),
+                        )
+                      : ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          itemCount: _nearbyPharmacies.length,
+                          itemBuilder: (context, index) {
+                            final p = _nearbyPharmacies[index];
+                            final dist = p.distanceKm != null
+                                ? p.formattedDistance
+                                : ((p.location != null && p.location!.isNotEmpty) ? p.location! : 'Proximity GPS');
+                            return _buildPharmacyCard(
+                              name: p.name,
+                              distance: dist,
+                              address: p.location,
+                              deliveryTime: 'Same Day Delivery',
+                              latitude: p.latitude,
+                              longitude: p.longitude,
+                            );
+                          },
+                        ),
             ),
-
-            // Example Generic Switch Comparison
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const MedicineDetailScreen(
-                        medicineName: 'Amoxyclav 625 IP',
-                        genericPrice: 73.60,
-                        brandedPrice: 204.50,
-                      ),
-                    ),
-                  );
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLowest,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Expanded(
-                            child: Row(
-                              children: [
-                                Icon(Icons.compare_arrows, color: AppColors.primary, size: 20),
-                                SizedBox(width: 6),
-                                Flexible(
-                                  child: Text(
-                                    'EXAMPLE GENERIC SWITCH',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 0.5,
-                                      color: AppColors.onSurface,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: AppColors.secondaryFixed.withValues(alpha: 0.4),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text(
-                              'SAVE 64%',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.onSecondaryContainer,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Brand Name', style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant)),
-                                const SizedBox(height: 2),
-                                const Text('Augmentin 625 Duo', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 4),
-                                Text('₹204.50 / 10 tabs', style: TextStyle(fontSize: 12, color: AppColors.outline)),
-                              ],
-                            ),
-                          ),
-                          Container(width: 1, height: 48, color: AppColors.surfaceContainer),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Generic Substitute', style: TextStyle(fontSize: 11, color: AppColors.secondary, fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 2),
-                                const Text('Amoxyclav 625 IP', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                                const SizedBox(height: 4),
-                                const Text('₹73.60 / 10 tabs', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -675,7 +719,10 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 MaterialPageRoute(builder: (_) => const LiveOrderTrackingScreen()),
               );
             } else if (index == 3) {
-              ScreenShowcaseSheet.show(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const UserProfileScreen()),
+              ).then((_) => _loadLocationAndPharmacies());
             }
           },
           backgroundColor: Colors.transparent,
@@ -684,48 +731,21 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
             NavigationDestination(icon: Icon(Icons.search), label: 'Search'),
             NavigationDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: 'Orders'),
-            NavigationDestination(icon: Icon(Icons.grid_view), label: 'All Screens'),
+            NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildCategoryItem(String title, IconData icon, String query) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: InkWell(
-        onTap: () => _navigateToSearch(query),
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          children: [
-            Container(
-              width: 58,
-              height: 58,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLowest,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.4)),
-              ),
-              child: Icon(icon, color: AppColors.primary, size: 26),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.onSurface),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildPharmacyCard({
     required String name,
-    required String rating,
-    required String reviews,
     required String distance,
+    String? address,
     required String deliveryTime,
+    double? latitude,
+    double? longitude,
   }) {
     return Container(
       width: 260,
@@ -761,17 +781,12 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
           ),
           Row(
             children: [
-              const Icon(Icons.star, size: 14, color: AppColors.tertiary),
-              const SizedBox(width: 2),
-              Text(
-                rating,
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.tertiary),
-              ),
-              const SizedBox(width: 2),
+              const Icon(Icons.location_on_outlined, size: 14, color: AppColors.primary),
+              const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  '• $reviews reviews • $distance',
-                  style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                  address != null && address.isNotEmpty ? '$distance • $address' : distance,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.onSurfaceVariant),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -790,7 +805,9 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 const SizedBox(width: 2),
                 Flexible(
                   child: Text(
-                    'Delivers in $deliveryTime',
+                    deliveryTime.toLowerCase().contains('delivery')
+                        ? deliveryTime
+                        : 'Delivers in $deliveryTime',
                     style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.onSecondaryFixed),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -801,19 +818,31 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Expanded(
-                child: Text(
-                  'Generic support: Active',
+              if (latitude != null && longitude != null)
+                InkWell(
+                  onTap: () => openGoogleMapsRoute(latitude, longitude),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.directions, size: 14, color: AppColors.primary),
+                      SizedBox(width: 2),
+                      Text(
+                        'Directions',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                const Text(
+                  'Generic: Active',
                   style: TextStyle(fontSize: 11, color: AppColors.secondary, fontWeight: FontWeight.w600),
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              const SizedBox(width: 4),
               InkWell(
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const MapNearbyPharmaciesScreen()),
+                    MaterialPageRoute(builder: (_) => const RealNearbyPharmaciesScreen()),
                   );
                 },
                 child: const Text('Visit ›', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),

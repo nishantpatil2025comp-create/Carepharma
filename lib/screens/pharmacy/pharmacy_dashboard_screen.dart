@@ -1,12 +1,26 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../../models/order.dart';
+import '../../models/pharmacy.dart';
+import '../../services/order_service.dart';
+import '../../services/pharmacy_service.dart';
+import '../../auth_service.dart';
 import '../screen_showcase_sheet.dart';
 import 'pharmacy_inventory_screen.dart';
 import 'pharmacy_self_delivery_screen.dart';
 
 /// Screen 9: Pharmacy Partner Web/Portal Operations Dashboard
 class PharmacyDashboardScreen extends StatefulWidget {
-  const PharmacyDashboardScreen({super.key});
+  const PharmacyDashboardScreen({
+    super.key,
+    this.pharmacyService,
+    this.orderService,
+    this.authService,
+  });
+
+  final IPharmacyService? pharmacyService;
+  final IOrderService? orderService;
+  final AuthService? authService;
 
   @override
   State<PharmacyDashboardScreen> createState() => _PharmacyDashboardScreenState();
@@ -16,8 +30,96 @@ class _PharmacyDashboardScreenState extends State<PharmacyDashboardScreen> {
   bool _isAcceptingOrders = true;
   bool _isAudioAlertsEnabled = true;
 
+  late final IPharmacyService _pharmacyService;
+  late final IOrderService _orderService;
+  late final AuthService _authService;
+
+  Pharmacy? _pharmacy;
+  List<OrderItem> _orders = [];
+  bool _isLoading = true;
+
+  static const List<String> _lifecyclePhases = [
+    'Pending',
+    'Packing',
+    'Dispatched',
+    'Delivered',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _pharmacyService = widget.pharmacyService ?? const PharmacyService();
+    _orderService = widget.orderService ?? const OrderService();
+    _authService = widget.authService ?? const AuthService();
+    _loadPharmacyAndOrders();
+  }
+
+  Future<void> _loadPharmacyAndOrders() async {
+    setState(() => _isLoading = true);
+    try {
+      final user = _authService.currentUser;
+      final pharmacy = await _pharmacyService.fetchPharmacyForOwner(user?.id, email: user?.email);
+      final activePharmacy = pharmacy ??
+          const Pharmacy(
+            uid: 'PH-UID-1001',
+            name: 'Apollo Meds & Wellness',
+            location: 'Baner Road, Baner, Pune',
+            phone: '+91 98234 56789',
+            license: 'MH-PUN-2024-8891',
+          );
+
+      final orders = await _orderService.fetchOrdersForPharmacy(activePharmacy.uid);
+
+      if (mounted) {
+        setState(() {
+          _pharmacy = activePharmacy;
+          _orders = orders;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('[PharmacyDashboard] Error loading data: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _updateStatus(OrderItem order, String newStatus) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await _orderService.updateOrderStatus(order.id, newStatus);
+    if (mounted) {
+      setState(() {
+        final index = _orders.indexWhere((o) => o.id == order.id);
+        if (index != -1) {
+          _orders[index] = _orders[index].copyWith(status: newStatus);
+        }
+      });
+      final shortId = order.id.length > 8 ? order.id.substring(0, 8).toUpperCase() : order.id;
+      messenger.showSnackBar(
+        SnackBar(content: Text('Order #$shortId moved to $newStatus')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final pharmacyName = _pharmacy?.name ?? 'Apollo Meds & Wellness';
+    final pharmacyLocation = _pharmacy?.location ?? 'Baner, Pune';
+    final pharmacyLicense = _pharmacy?.license ?? 'MH-PUN-2024-8891';
+
+    // Calculate real dynamic KPIs
+    final totalOrdersCount = _orders.length;
+    final grossRevenue = _orders.fold<double>(0.0, (sum, o) => sum + o.totalPrice);
+    final pendingPackingCount = _orders.where((o) {
+      final s = o.status.toLowerCase();
+      return s == 'pending' || s == 'placed' || s == 'packing' || s == 'packed';
+    }).length;
+    final activeDispatchesCount = _orders.where((o) {
+      final s = o.status.toLowerCase();
+      return s == 'dispatched' || s == 'out for delivery' || s == 'out_for_delivery';
+    }).length;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -26,28 +128,32 @@ class _PharmacyDashboardScreenState extends State<PharmacyDashboardScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Flexible(
                   child: Text(
-                    'Apollo Meds & Wellness',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primary),
+                    pharmacyName,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primary),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                SizedBox(width: 6),
-                Icon(Icons.verified, size: 16, color: AppColors.primary),
+                const SizedBox(width: 6),
+                const Icon(Icons.verified, size: 16, color: AppColors.primary),
               ],
             ),
             Text(
-              'Baner, Pune (Branch #12) • Lic: MH-PUN-2024-8891',
+              '$pharmacyLocation • Lic: $pharmacyLicense',
               style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant.withValues(alpha: 0.8)),
               overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
         actions: [
-          // Audio alerts toggle
+          IconButton(
+            icon: const Icon(Icons.refresh, color: AppColors.primary),
+            tooltip: 'Refresh Orders',
+            onPressed: _loadPharmacyAndOrders,
+          ),
           IconButton(
             icon: Icon(
               _isAudioAlertsEnabled ? Icons.volume_up : Icons.volume_off,
@@ -68,246 +174,265 @@ class _PharmacyDashboardScreenState extends State<PharmacyDashboardScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Accepting Orders Status Toggle Card
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: _isAcceptingOrders
-                    ? AppColors.secondaryContainer.withValues(alpha: 0.3)
-                    : AppColors.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: _isAcceptingOrders ? AppColors.secondary : AppColors.outlineVariant,
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Row(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : RefreshIndicator(
+              onRefresh: _loadPharmacyAndOrders,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Accepting Orders Status Toggle Card
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: _isAcceptingOrders
+                            ? AppColors.secondaryContainer.withValues(alpha: 0.3)
+                            : AppColors.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: _isAcceptingOrders ? AppColors.secondary : AppColors.outlineVariant,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: BoxDecoration(
+                                    color: _isAcceptingOrders ? AppColors.pharmacyGreen : AppColors.outline,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _isAcceptingOrders ? 'Accepting Orders (Online)' : 'Store Paused (Offline)',
+                                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                      ),
+                                      const Text(
+                                        'Incoming orders from 3.5 km radius automatically dispatched',
+                                        style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Switch(
+                            value: _isAcceptingOrders,
+                            activeThumbColor: AppColors.primary,
+                            onChanged: (val) {
+                              setState(() => _isAcceptingOrders = val);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(_isAcceptingOrders ? 'Store is now LIVE' : 'Store order intake PAUSED')),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // DYNAMIC KPI METRIC CARDS GRID
+                    GridView.count(
+                      crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.25,
                       children: [
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: _isAcceptingOrders ? AppColors.pharmacyGreen : AppColors.outline,
-                            shape: BoxShape.circle,
+                        _buildKpiCard(
+                          'Today\'s Orders',
+                          totalOrdersCount.toString(),
+                          'Active queue',
+                          Icons.receipt_long,
+                          AppColors.primary,
+                        ),
+                        _buildKpiCard(
+                          'Gross Revenue',
+                          '₹${grossRevenue.toStringAsFixed(0)}',
+                          'Fulfilled total',
+                          Icons.payments,
+                          AppColors.secondary,
+                        ),
+                        _buildKpiCard(
+                          'Pending Packing',
+                          pendingPackingCount.toString(),
+                          'Action required',
+                          Icons.inventory_2,
+                          AppColors.tertiary,
+                        ),
+                        _buildKpiCard(
+                          'Active Dispatches',
+                          activeDispatchesCount.toString(),
+                          'Store runners',
+                          Icons.two_wheeler,
+                          AppColors.userBlue,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // QUICK NAVIGATION TABS TO INVENTORY & DELIVERY
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const PharmacyInventoryScreen()),
+                              );
+                            },
+                            icon: const Icon(Icons.inventory_2),
+                            label: const Text('Manage Stock Catalog'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.surfaceContainerLowest,
+                              foregroundColor: AppColors.primary,
+                              side: const BorderSide(color: AppColors.primary),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 12),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _isAcceptingOrders ? 'Accepting Orders (Online)' : 'Store Paused (Offline)',
-                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                              ),
-                              const Text(
-                                'Incoming orders from 3.5 km radius automatically dispatched',
-                                style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
-                              ),
-                            ],
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const PharmacySelfDeliveryScreen()),
+                              );
+                            },
+                            icon: const Icon(Icons.local_shipping),
+                            label: const Text('Self-Fleet Dispatch'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Switch(
-                    value: _isAcceptingOrders,
-                    activeThumbColor: AppColors.primary,
-                    onChanged: (val) {
-                      setState(() => _isAcceptingOrders = val);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(_isAcceptingOrders ? 'Store is now LIVE' : 'Store order intake PAUSED')),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
-            // KPI METRIC CARDS GRID
-            GridView.count(
-              crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.25,
-              children: [
-                _buildKpiCard('Today\'s Orders', '34', '+12% vs y\'day', Icons.receipt_long, AppColors.primary),
-                _buildKpiCard('Gross Revenue', '₹14,850', '68% generics', Icons.payments, AppColors.secondary),
-                _buildKpiCard('Pending Packing', '5', 'Action required', Icons.inventory_2, AppColors.tertiary),
-                _buildKpiCard('Active Dispatches', '4', 'Store runners', Icons.two_wheeler, AppColors.userBlue),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // QUICK NAVIGATION TABS TO INVENTORY & DELIVERY
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const PharmacyInventoryScreen()),
-                      );
-                    },
-                    icon: const Icon(Icons.inventory_2),
-                    label: const Text('Manage Stock Catalog'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.surfaceContainerLowest,
-                      foregroundColor: AppColors.primary,
-                      side: const BorderSide(color: AppColors.primary),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    // LIVE INCOMING ORDERS QUEUE
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Live Orders Fulfillment Queue (${_orders.length})',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${_orders.length} orders total',
+                          style: const TextStyle(fontSize: 11, color: AppColors.outline),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const PharmacySelfDeliveryScreen()),
-                      );
-                    },
-                    icon: const Icon(Icons.local_shipping),
-                    label: const Text('Self-Fleet Dispatch'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
+                    const SizedBox(height: 10),
 
-            // LIVE INCOMING ORDERS QUEUE
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    'Live Orders Fulfillment Queue (5)',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                SizedBox(width: 8),
-                Text(
-                  'Auto-refresh (5s)',
-                  style: TextStyle(fontSize: 11, color: AppColors.outline),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            _buildOrderQueueCard(
-              orderId: 'Order #GM-89421',
-              time: '2 mins ago',
-              customer: 'Aniket Mehta • Baner High St (1.2 km)',
-              items: 'Paracetamol IP 650mg x2, Cetirizine 10mg x1',
-              total: '₹48.50 (Prepaid UPI)',
-              isColdChain: true,
-              actionLabel: 'Pack & Assign Runner',
-              onAction: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const PharmacySelfDeliveryScreen()),
-                );
-              },
-            ),
-            _buildOrderQueueCard(
-              orderId: 'Order #GM-89418',
-              time: '14 mins ago',
-              customer: 'Priya Sharma • Pancard Club Rd (0.8 km)',
-              items: 'Metformin 500mg SR x2 strips',
-              total: '₹36.00 (Cash on Delivery)',
-              isColdChain: false,
-              actionLabel: 'Verify Rx & Pack',
-              onAction: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Order #GM-89418 marked Packed!')),
-                );
-              },
-            ),
-            const SizedBox(height: 20),
-
-            // GENERIC SUBSTITUTION REQUESTS CARD
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLowest,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.secondary.withValues(alpha: 0.4)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Expanded(
-                        child: Row(
+                    if (_orders.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerLowest,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+                        ),
+                        child: Column(
                           children: [
-                            Icon(Icons.compare_arrows, color: AppColors.secondary, size: 20),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Patient Generic Switch Request',
-                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                            Icon(Icons.inbox_outlined, size: 48, color: Colors.grey.shade400),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'No orders found',
+                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Orders placed by patients in your delivery radius will appear in this queue in real-time.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
                             ),
                           ],
                         ),
+                      )
+                    else
+                      ..._orders.map((order) => _buildLiveOrderCard(order)),
+
+                    const SizedBox(height: 20),
+
+                    // GENERIC SUBSTITUTION POLICY CARD
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerLowest,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.secondary.withValues(alpha: 0.4)),
                       ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppColors.secondaryContainer,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text('Save 69%', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.onSecondaryContainer)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Expanded(
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.compare_arrows, color: AppColors.secondary, size: 20),
+                                    SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Generic Substitution Policy',
+                                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppColors.secondaryContainer,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  'Active',
+                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.onSecondaryContainer),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Licensed pharmacists can dispense bio-equivalent generic medicines matching active salts to offer patient savings of up to 70%.',
+                            style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Prescribed: Crocin 650mg (MRP ₹58.50) -> Requested: Paracetamol IP 650mg Genext (₹18.00)',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.onSurface),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Generic substitution approved and confirmed to patient!')),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary),
-                      child: const Text('Approve Generic Bio-Equivalent & Dispense'),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -347,16 +472,14 @@ class _PharmacyDashboardScreenState extends State<PharmacyDashboardScreen> {
     );
   }
 
-  Widget _buildOrderQueueCard({
-    required String orderId,
-    required String time,
-    required String customer,
-    required String items,
-    required String total,
-    required bool isColdChain,
-    required String actionLabel,
-    required VoidCallback onAction,
-  }) {
+  Widget _buildLiveOrderCard(OrderItem order) {
+    final shortId = order.id.length > 8 ? order.id.substring(0, 8).toUpperCase() : order.id;
+    final currentStatus = order.status;
+    final normalizedStatus = _lifecyclePhases.firstWhere(
+      (phase) => phase.toLowerCase() == currentStatus.toLowerCase(),
+      orElse: () => _lifecyclePhases.first,
+    );
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
@@ -368,17 +491,18 @@ class _PharmacyDashboardScreenState extends State<PharmacyDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Order ID and Status Badge
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: Text.rich(
                   TextSpan(
-                    text: orderId,
+                    text: 'Order #$shortId',
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                     children: [
                       TextSpan(
-                        text: ' • $time',
+                        text: ' • ${order.formattedDate}',
                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.normal, color: AppColors.outline),
                       ),
                     ],
@@ -387,48 +511,87 @@ class _PharmacyDashboardScreenState extends State<PharmacyDashboardScreen> {
                   maxLines: 1,
                 ),
               ),
-              if (isColdChain) ...[
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.tertiaryFixed,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.ac_unit, size: 11, color: AppColors.tertiary),
-                      SizedBox(width: 3),
-                      Text('Cold Chain', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.onTertiaryFixed)),
-                    ],
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: currentStatus.toLowerCase() == 'delivered'
+                      ? const Color(0xFFE6F4EA)
+                      : AppColors.secondaryContainer,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  currentStatus.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: currentStatus.toLowerCase() == 'delivered'
+                        ? const Color(0xFF137333)
+                        : AppColors.onSecondaryContainer,
                   ),
                 ),
-              ],
+              ),
             ],
           ),
           const SizedBox(height: 6),
-          Text(customer, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis),
-          Text(items, style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant), overflow: TextOverflow.ellipsis),
+          Text(
+            order.patientEmail,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (order.deliveryAddress != null && order.deliveryAddress!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                'Destination: ${order.deliveryAddress}',
+                style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          const SizedBox(height: 4),
+          Text(
+            '${order.medicineName} x${order.quantity}',
+            style: const TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600),
+            overflow: TextOverflow.ellipsis,
+          ),
           const SizedBox(height: 10),
+
+          // Lifecycle phase progression and total
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Text(
-                  total,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary),
-                  overflow: TextOverflow.ellipsis,
-                ),
+              Text(
+                '₹${order.totalPrice.toStringAsFixed(2)}',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary),
               ),
               const SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: onAction,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  minimumSize: Size.zero,
+
+              // Phase dropdown selector
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.outlineVariant),
                 ),
-                child: Text(actionLabel, style: const TextStyle(fontSize: 12)),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: normalizedStatus,
+                    isDense: true,
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.onSurface),
+                    items: _lifecyclePhases.map((phase) {
+                      return DropdownMenuItem<String>(
+                        value: phase,
+                        child: Text(phase),
+                      );
+                    }).toList(),
+                    onChanged: (newPhase) {
+                      if (newPhase != null && newPhase != currentStatus) {
+                        _updateStatus(order, newPhase);
+                      }
+                    },
+                  ),
+                ),
               ),
             ],
           ),
@@ -437,3 +600,4 @@ class _PharmacyDashboardScreenState extends State<PharmacyDashboardScreen> {
     );
   }
 }
+

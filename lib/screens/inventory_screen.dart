@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import '../models/medicine.dart';
+import '../models/pharmacy.dart';
 import '../services/medicine_service.dart';
+import '../services/pharmacy_service.dart';
 import '../auth_service.dart';
 import '../widgets/medicine_card.dart';
 import '../widgets/medicine_dialog.dart';
+import 'pharmacy/pharmacist_profile_screen.dart';
 
 /// Full Pharmacy Admin Inventory Screen implementing real Supabase integration.
 class InventoryScreen extends StatefulWidget {
@@ -23,6 +26,9 @@ class InventoryScreen extends StatefulWidget {
 class _InventoryScreenState extends State<InventoryScreen> {
   late final IMedicineService _medicineService;
   late final AuthService _authService;
+  final PharmacyService _pharmacyService = const PharmacyService();
+  Pharmacy? _currentPharmacy;
+  int _selectedNavTab = 0;
 
   List<Medicine> _medicines = [];
   bool _isLoading = true;
@@ -41,11 +47,29 @@ class _InventoryScreenState extends State<InventoryScreen> {
     super.initState();
     _medicineService = widget.medicineService ?? const MedicineService();
     _authService = widget.authService ?? const AuthService();
+    _searchController.addListener(_onSearchChanged);
     _loadMedicines();
+    _loadPharmacyDetails();
+  }
+
+  Future<void> _loadPharmacyDetails() async {
+    try {
+      final user = _authService.currentUser;
+      final email = user?.email ?? _authService.currentUserEmail;
+      final p = await _pharmacyService.fetchPharmacyForOwner(user?.id, email: email);
+      if (mounted && p != null) {
+        setState(() => _currentPharmacy = p);
+      }
+    } catch (_) {}
+  }
+
+  void _onSearchChanged() {
+    setState(() {});
   }
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
@@ -232,13 +256,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
   List<Medicine> get _filteredMedicines {
     final query = _searchController.text.trim().toLowerCase();
     return _medicines.where((med) {
-      // 1. Text filter (matches name, manufacturer, type, or UID)
+      // 1. Text filter (matches name, generic salt, manufacturer, type, or UID)
       if (query.isNotEmpty) {
         final matchName = med.name.toLowerCase().contains(query);
+        final matchSalt = med.genericSalt != null && med.genericSalt!.toLowerCase().contains(query);
         final matchManufacturer = med.manufacturer.toLowerCase().contains(query);
         final matchType = med.type.toLowerCase().contains(query);
         final matchUid = med.uid != null && med.uid!.toLowerCase().contains(query);
-        if (!matchName && !matchManufacturer && !matchType && !matchUid) {
+        if (!matchName && !matchSalt && !matchManufacturer && !matchType && !matchUid) {
           return false;
         }
       }
@@ -286,12 +311,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
               children: [
                 const Icon(Icons.local_pharmacy, color: _primaryColor, size: 20),
                 const SizedBox(width: 6),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Apollo Meds & Wellness',
+                    _currentPharmacy?.name ?? 'Apollo Meds & Wellness',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF191C1E),
@@ -306,7 +331,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Text(
-                    'CDSCO Verified',
+                    'Verified Store',
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
@@ -316,11 +341,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 ),
               ],
             ),
-            const Text(
-              'Lic: MH-PUN-2024-8891 • Pune Central',
+            Text(
+              _currentPharmacy?.location ?? 'Pharmacist Admin Dashboard',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 11, color: Color(0xFF6D7A77)),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF6D7A77)),
             ),
           ],
         ),
@@ -329,6 +354,21 @@ class _InventoryScreenState extends State<InventoryScreen> {
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh Inventory',
             onPressed: _loadMedicines,
+          ),
+          IconButton(
+            icon: const Icon(Icons.storefront_outlined),
+            tooltip: 'Store Profile & Settings',
+            onPressed: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => PharmacistProfileScreen(
+                    authService: _authService,
+                    pharmacyService: _pharmacyService,
+                  ),
+                ),
+              );
+              _loadPharmacyDetails();
+            },
           ),
           IconButton(
             icon: const Icon(Icons.logout),
@@ -744,6 +784,36 @@ class _InventoryScreenState extends State<InventoryScreen> {
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedNavTab,
+        onDestinationSelected: (idx) async {
+          if (idx == 1) {
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => PharmacistProfileScreen(
+                  authService: _authService,
+                  pharmacyService: _pharmacyService,
+                ),
+              ),
+            );
+            _loadPharmacyDetails();
+          } else {
+            setState(() => _selectedNavTab = idx);
+          }
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.inventory_2_outlined),
+            selectedIcon: Icon(Icons.inventory_2),
+            label: 'Inventory',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.storefront_outlined),
+            selectedIcon: Icon(Icons.storefront),
+            label: 'Store & Settings',
+          ),
+        ],
       ),
     );
   }

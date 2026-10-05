@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../theme/app_colors.dart';
+import '../../services/order_service.dart';
+import '../../models/order.dart';
+import '../../auth_service.dart';
 import 'live_order_tracking_screen.dart';
+import 'user_profile_screen.dart';
 
 /// Screen 4: Multi-Pharmacy Cart & Checkout with Split-Fulfillment
 class CartCheckoutScreen extends StatefulWidget {
@@ -14,7 +19,189 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
   int _item1Qty = 2;
   int _item2Qty = 1;
   int _item3Qty = 1;
-  String _paymentMethod = 'UPI';
+  String _paymentMethod = 'COD';
+
+  final AuthService _authService = const AuthService();
+  final OrderService _orderService = const OrderService();
+  String _recipientName = 'Customer';
+  String _recipientPhone = '';
+  String _deliveryAddress = 'Loading address...';
+  double? _deliveryLat;
+  double? _deliveryLng;
+  bool _isLocating = false;
+  bool _isPlacingOrder = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileAddress();
+  }
+
+  Future<void> _loadProfileAddress() async {
+    try {
+      final profile = await _authService.getUserProfile();
+      if (profile != null && mounted) {
+        setState(() {
+          if (profile.fullName != null && profile.fullName!.isNotEmpty) {
+            _recipientName = profile.fullName!;
+          }
+          if (profile.phone != null && profile.phone!.isNotEmpty) {
+            _recipientPhone = profile.phone!;
+          }
+          if (profile.deliveryAddress != null && profile.deliveryAddress!.isNotEmpty) {
+            _deliveryAddress = profile.deliveryAddress!;
+          }
+          _deliveryLat = profile.latitude;
+          _deliveryLng = profile.longitude;
+        });
+      } else if (mounted) {
+        setState(() {
+          _deliveryAddress = 'Baner, Pune (Default Hub)';
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _deliveryAddress = 'Baner, Pune (Default Hub)';
+        });
+      }
+    }
+  }
+
+  Future<void> _detectGpsLocation() async {
+    setState(() => _isLocating = true);
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled().timeout(
+        const Duration(milliseconds: 400),
+        onTimeout: () => false,
+      );
+      if (!serviceEnabled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please enable GPS location service.')),
+          );
+          setState(() => _isLocating = false);
+        }
+        return;
+      }
+
+      var perm = await Geolocator.checkPermission().timeout(
+        const Duration(milliseconds: 500),
+        onTimeout: () => LocationPermission.denied,
+      );
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission().timeout(
+          const Duration(seconds: 2),
+          onTimeout: () => LocationPermission.denied,
+        );
+      }
+      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permission denied.')),
+          );
+          setState(() => _isLocating = false);
+        }
+        return;
+      }
+
+      Position? pos;
+      try {
+        pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(timeLimit: Duration(seconds: 4)),
+        );
+      } catch (_) {
+        pos = await Geolocator.getLastKnownPosition().timeout(
+          const Duration(seconds: 2),
+          onTimeout: () => null,
+        );
+      }
+
+      if (pos == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not determine GPS coordinates. Please try again.')),
+          );
+          setState(() => _isLocating = false);
+        }
+        return;
+      }
+
+      final nonNullPos = pos;
+      if (mounted) {
+        setState(() {
+          _deliveryLat = nonNullPos.latitude;
+          _deliveryLng = nonNullPos.longitude;
+          _deliveryAddress = 'GPS: ${nonNullPos.latitude.toStringAsFixed(4)}, ${nonNullPos.longitude.toStringAsFixed(4)}';
+          _isLocating = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Delivery destination set to current GPS!')),
+        );
+      }
+
+      // Persist GPS coordinates to user profile in Supabase
+      if (_authService.currentUser != null) {
+        try {
+          final existingProfile = await _authService.getUserProfile();
+          if (existingProfile != null) {
+            final updated = existingProfile.copyWith(
+              latitude: nonNullPos.latitude,
+              longitude: nonNullPos.longitude,
+              deliveryAddress: 'GPS: ${nonNullPos.latitude.toStringAsFixed(4)}, ${nonNullPos.longitude.toStringAsFixed(4)}',
+            );
+            await _authService.saveUserProfile(updated);
+          }
+        } catch (_) {}
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLocating = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('GPS error: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _placeOrder(double totalPayable) async {
+    setState(() => _isPlacingOrder = true);
+    try {
+      final user = _authService.currentUser;
+      final email = user?.email ?? _authService.currentUserEmail ?? 'customer@carepharma.local';
+
+      final order = OrderItem(
+        id: 'ORD-${DateTime.now().millisecondsSinceEpoch}',
+        medicineName: 'Prescription Generic Bundle (3 Items)',
+        quantity: _item1Qty + _item2Qty + _item3Qty,
+        totalPrice: totalPayable,
+        patientEmail: email,
+        deliveryAddress: _deliveryAddress,
+        deliveryLatitude: _deliveryLat,
+        deliveryLongitude: _deliveryLng,
+        status: 'placed',
+      );
+
+      final created = await _orderService.createOrder(order);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Order placed successfully! Live delivery tracking active.')),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => LiveOrderTrackingScreen(initialOrder: created)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to place order: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPlacingOrder = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -153,7 +340,7 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
               storeName: 'Apollo Diagnostics & Meds',
               storeTag: 'Store #1',
               distance: '0.8 km',
-              deliveryETA: '35 mins',
+              deliveryETA: 'Same Day Delivery',
               items: [
                 _buildCartItem(
                   title: 'Paracetamol IP 650mg (Genext)',
@@ -190,7 +377,7 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
               storeName: 'MedLife Generic Care',
               storeTag: 'Store #2',
               distance: '1.4 km',
-              deliveryETA: '45 mins',
+              deliveryETA: 'Same Day Delivery',
               items: [
                 _buildCartItem(
                   title: 'Pantoprazole 40mg IP (Generic)',
@@ -239,9 +426,25 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                           ],
                         ),
                       ),
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text('Change', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Row(
+                        children: [
+                          TextButton.icon(
+                            onPressed: _isLocating ? null : _detectGpsLocation,
+                            icon: _isLocating
+                                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                                : const Icon(Icons.my_location, size: 16),
+                            label: const Text('Fetch GPS', style: TextStyle(fontSize: 12)),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const UserProfileScreen()),
+                              ).then((_) => _loadProfileAddress());
+                            },
+                            child: const Text('Edit', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -251,27 +454,28 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                       color: AppColors.surfaceContainerLow,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Row(
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.place, color: AppColors.outline, size: 20),
-                        SizedBox(width: 10),
+                        const Icon(Icons.place, color: AppColors.primary, size: 20),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: [
-                                  Text('Home', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                                  SizedBox(width: 6),
-                                  Text('(Primary)', style: TextStyle(fontSize: 11, color: AppColors.outline)),
+                                  Text(_deliveryLat != null ? 'GPS Verified' : 'Saved Address', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                                  const SizedBox(width: 6),
+                                  Text(_deliveryLat != null ? '(Live Device)' : '(Profile)', style: const TextStyle(fontSize: 11, color: AppColors.primary)),
                                 ],
                               ),
-                              SizedBox(height: 2),
-                              Text('Flat 402, Green Glen Apts, Baner High Street', style: TextStyle(fontSize: 13)),
-                              Text('Pune, Maharashtra - 411045', style: TextStyle(fontSize: 12, color: AppColors.outline)),
-                              SizedBox(height: 4),
-                              Text('Recipient: Aniket Mehta (+91 98230 44129)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                              const SizedBox(height: 2),
+                              Text(_deliveryAddress, style: const TextStyle(fontSize: 13)),
+                              if (_recipientPhone.isNotEmpty || _recipientName != 'Customer') ...[
+                                const SizedBox(height: 4),
+                                Text('Recipient: $_recipientName ($_recipientPhone)', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                              ],
                             ],
                           ),
                         ),
@@ -318,23 +522,11 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                   ),
                   const SizedBox(height: 12),
                   _buildPaymentRadio(
-                    title: 'UPI (Google Pay, PhonePe, Paytm)',
-                    subtitle: 'Instant contactless & zero fee',
-                    value: 'UPI',
-                    tag: 'RECOMMENDED',
-                    icon: Icons.qr_code_scanner,
-                  ),
-                  _buildPaymentRadio(
-                    title: 'Cash on Delivery',
-                    subtitle: 'Pay direct to Pharmacy Runners on arrival',
+                    title: 'Cash on Delivery (Dummy COD)',
+                    subtitle: 'Dummy test placeholder option • Pay directly on arrival',
                     value: 'COD',
+                    tag: 'DEFAULT OPTION',
                     icon: Icons.payments_outlined,
-                  ),
-                  _buildPaymentRadio(
-                    title: 'Debit / Credit Card / Netbanking',
-                    subtitle: 'Visa, Mastercard, RuPay, ICICI, HDFC',
-                    value: 'CARD',
-                    icon: Icons.credit_card,
                   ),
                 ],
               ),
@@ -472,14 +664,15 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
             const SizedBox(width: 20),
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LiveOrderTrackingScreen()),
-                  );
-                },
-                icon: const Icon(Icons.arrow_forward),
-                label: const Text('Place Order (Track Live)'),
+                onPressed: _isPlacingOrder ? null : () => _placeOrder(totalPayable),
+                icon: _isPlacingOrder
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.arrow_forward),
+                label: Text(_isPlacingOrder ? 'Processing...' : 'Place Order (Track Live)'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -539,7 +732,7 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                         ],
                       ),
                       Text(
-                        '$distance away • $deliveryETA by runner',
+                        '$distance away • $deliveryETA',
                         style: const TextStyle(fontSize: 11, color: AppColors.outline),
                         overflow: TextOverflow.ellipsis,
                       ),

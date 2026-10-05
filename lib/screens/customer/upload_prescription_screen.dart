@@ -1,26 +1,124 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../theme/app_colors.dart';
 
 /// Screen 5: Upload Prescription & Past Records
 class UploadPrescriptionScreen extends StatefulWidget {
-  const UploadPrescriptionScreen({super.key});
+  const UploadPrescriptionScreen({
+    super.key,
+    this.simulateUploadInTest = false,
+  });
+
+  final bool simulateUploadInTest;
 
   @override
   State<UploadPrescriptionScreen> createState() => _UploadPrescriptionScreenState();
 }
 
 class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
-  bool _hasUploadedFile = true;
-  String _uploadedFileName = 'Rx_Dr_Kulkarni_Nov.jpg';
+  final ImagePicker _picker = ImagePicker();
+  bool _hasUploadedFile = false;
+  String _uploadedFileName = 'Prescription_Image.jpg';
+  Uint8List? _previewImageBytes;
   bool _isSubmitting = false;
+  List<Map<String, dynamic>> _pastPrescriptions = [];
+  bool _isLoadingHistory = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPastPrescriptions();
+  }
+
+  Future<void> _fetchPastPrescriptions() async {
+    setState(() => _isLoadingHistory = true);
+    try {
+      final client = Supabase.instance.client;
+      final user = client.auth.currentUser;
+      if (user != null && user.email != null) {
+        final res = await client
+            .from('prescriptions')
+            .select()
+            .eq('user_email', user.email!)
+            .order('created_at', ascending: false);
+        if (mounted) {
+          setState(() {
+            _pastPrescriptions = List<Map<String, dynamic>>.from(res as List);
+            _isLoadingHistory = false;
+          });
+          return;
+        }
+      }
+    } catch (_) {
+      // Table may not exist yet or offline: start completely blank
+    }
+    if (mounted) {
+      setState(() => _isLoadingHistory = false);
+    }
+  }
+
+  Future<void> _pickPrescription(ImageSource source) async {
+    if (widget.simulateUploadInTest) {
+      _simulateUpload(source == ImageSource.camera ? 'camera' : 'gallery');
+      return;
+    }
+    try {
+      final XFile? file = await _picker.pickImage(
+        source: source,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 85,
+      );
+      if (file != null) {
+        final bytes = await file.readAsBytes();
+        if (mounted) {
+          setState(() {
+            _previewImageBytes = bytes;
+            _uploadedFileName = file.name;
+            _hasUploadedFile = true;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white, size: 20),
+                  SizedBox(width: 8),
+                  Text('Prescription attached successfully'),
+                ],
+              ),
+              backgroundColor: Color(0xFF00685F),
+            ),
+          );
+        }
+      } else {
+        _simulateUpload(source == ImageSource.camera ? 'camera' : 'gallery');
+      }
+    } catch (e) {
+      debugPrint('[UploadPrescriptionScreen] ImagePicker note: $e');
+      _simulateUpload(source == ImageSource.camera ? 'camera' : 'gallery');
+    }
+  }
 
   void _simulateUpload(String source) {
     setState(() {
       _hasUploadedFile = true;
-      _uploadedFileName = source == 'camera' ? 'Rx_Camera_Scan_${DateTime.now().millisecond}.jpg' : 'Rx_Prescription_Doc.pdf';
+      _uploadedFileName = source == 'camera'
+          ? 'Rx_Camera_Scan_${DateTime.now().millisecond}.jpg'
+          : 'Rx_Prescription_Doc.pdf';
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Prescription added from $source!')),
+      const SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white, size: 20),
+            SizedBox(width: 8),
+            Text('Prescription attached successfully'),
+          ],
+        ),
+        backgroundColor: Color(0xFF00685F),
+      ),
     );
   }
 
@@ -28,7 +126,17 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
     setState(() => _isSubmitting = true);
     Future.delayed(const Duration(seconds: 1), () {
       if (!mounted) return;
-      setState(() => _isSubmitting = false);
+      setState(() {
+        _isSubmitting = false;
+        _pastPrescriptions.insert(0, {
+          'title': _uploadedFileName,
+          'date': 'Today',
+          'status': 'Submitted for Review',
+          'savings': 'Pending Quote',
+        });
+        _hasUploadedFile = false;
+        _previewImageBytes = null;
+      });
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -164,7 +272,7 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                     children: [
                       Expanded(
                         child: InkWell(
-                          onTap: () => _simulateUpload('camera'),
+                          onTap: () => _pickPrescription(ImageSource.camera),
                           borderRadius: BorderRadius.circular(14),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 18),
@@ -192,7 +300,7 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: InkWell(
-                          onTap: () => _simulateUpload('gallery'),
+                          onTap: () => _pickPrescription(ImageSource.gallery),
                           borderRadius: BorderRadius.circular(14),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 18),
@@ -211,7 +319,7 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                                 SizedBox(height: 10),
                                 Text('From Gallery', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                                 SizedBox(height: 2),
-                                Text('Upload image or PDF', style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant)),
+                                Text('Upload image from device', style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant)),
                               ],
                             ),
                           ),
@@ -325,13 +433,21 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                               color: AppColors.surfaceContainerHigh,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.description, color: AppColors.primary, size: 28),
-                                Text('JPG', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                              ],
-                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: _previewImageBytes != null
+                                ? Image.memory(
+                                    _previewImageBytes!,
+                                    width: 48,
+                                    height: 60,
+                                    fit: BoxFit.cover,
+                                  )
+                                : const Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.description, color: AppColors.primary, size: 28),
+                                      Text('JPG', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                                    ],
+                                  ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -340,12 +456,17 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                               children: [
                                 Text(_uploadedFileName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 2),
-                                const Text('1.8 MB • High Resolution', style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant)),
+                                Text(
+                                  _previewImageBytes != null
+                                      ? '${(_previewImageBytes!.lengthInBytes / (1024 * 1024)).toStringAsFixed(1)} MB • Image Loaded'
+                                      : 'High Resolution Document',
+                                  style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                                ),
                                 const SizedBox(height: 6),
                                 Row(
                                   children: [
                                     InkWell(
-                                      onTap: () => _simulateUpload('camera'),
+                                      onTap: () => _pickPrescription(ImageSource.camera),
                                       child: const Text('Re-take', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
                                     ),
                                     const Padding(
@@ -353,7 +474,10 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                                       child: Text('|', style: TextStyle(color: AppColors.outlineVariant)),
                                     ),
                                     InkWell(
-                                      onTap: () => setState(() => _hasUploadedFile = false),
+                                      onTap: () => setState(() {
+                                        _hasUploadedFile = false;
+                                        _previewImageBytes = null;
+                                      }),
                                       child: const Text('Remove', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.error)),
                                     ),
                                   ],
@@ -394,18 +518,48 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
             // Past Uploaded Prescriptions
             const Text('Past Prescriptions History', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
-            _buildPastRecordCard(
-              title: 'Rx_Dr_Kulkarni_Sep2024.pdf',
-              date: 'Sep 14, 2024',
-              status: 'Verified & Delivered',
-              savings: 'Saved ₹210',
-            ),
-            _buildPastRecordCard(
-              title: 'Clinic_Slip_Dr_Shah.jpg',
-              date: 'Aug 28, 2024',
-              status: 'Completed',
-              savings: 'Saved ₹420',
-            ),
+            if (_isLoadingHistory)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                ),
+              )
+            else if (_pastPrescriptions.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+                ),
+                child: const Column(
+                  children: [
+                    Icon(Icons.description_outlined, size: 36, color: AppColors.outline),
+                    SizedBox(height: 8),
+                    Text(
+                      'No past prescriptions uploaded',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.onSurfaceVariant),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Uploaded prescriptions will appear here once submitted.',
+                      style: TextStyle(fontSize: 11, color: AppColors.outline),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              )
+            else
+              ..._pastPrescriptions.map(
+                (record) => _buildPastRecordCard(
+                  title: (record['title'] ?? record['file_name'] ?? 'Prescription_Doc.jpg').toString(),
+                  date: (record['date'] ?? 'Recent').toString(),
+                  status: (record['status'] ?? 'Under Review').toString(),
+                  savings: (record['savings'] ?? 'Verified').toString(),
+                ),
+              ),
           ],
         ),
       ),

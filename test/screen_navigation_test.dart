@@ -12,6 +12,7 @@ import 'package:carepharma/screens/pharmacy/pharmacy_registration_screen.dart';
 import 'package:carepharma/screens/pharmacy/pharmacy_dashboard_screen.dart';
 import 'package:carepharma/screens/pharmacy/pharmacy_self_delivery_screen.dart';
 import 'package:carepharma/screens/auth/interactive_login_screen.dart';
+import 'package:carepharma/models/order.dart';
 
 Widget _buildTestApp(Widget child) {
   return MaterialApp(
@@ -29,17 +30,20 @@ void main() {
       expect(find.text('DELIVER TO'), findsOneWidget);
       expect(find.text('Baner, Pune'), findsOneWidget);
       expect(find.text('Save up to 60% with generic alternatives'), findsOneWidget);
-      expect(find.text('Popular Categories'), findsOneWidget);
       expect(find.text('Pharmacies Near You'), findsOneWidget);
     });
 
-    testWidgets('SearchResultsScreen renders branded benchmark and generic substitutes', (tester) async {
+    testWidgets('SearchResultsScreen renders search prompt on empty query and substitutes when queried', (tester) async {
       await tester.pumpWidget(_buildTestApp(const SearchResultsScreen()));
       await tester.pumpAndSettle();
 
-      expect(find.text('Crocin Advanced 650mg'), findsAtLeastNWidgets(1));
-      expect(find.text('Identified Generic Substitutes (4)'), findsOneWidget);
-      expect(find.text('Paracetamol IP 650mg (Genext)'), findsOneWidget);
+      expect(find.text('Search Medicines & Generics'), findsOneWidget);
+      expect(find.text('Type a medicine name or generic salt to search live inventory.'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'Amoxyclav');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Amoxyclav 625 Generic IP'), findsOneWidget);
       expect(find.text('TOP VALUE CHOICE'), findsOneWidget);
     });
 
@@ -88,13 +92,31 @@ void main() {
       expect(find.text('Search this area'), findsOneWidget);
     });
 
-    testWidgets('LiveOrderTrackingScreen renders 5-stage stepper and runner card', (tester) async {
+    testWidgets('LiveOrderTrackingScreen renders empty state when no active order exists', (tester) async {
       await tester.pumpWidget(_buildTestApp(const LiveOrderTrackingScreen()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No Active Orders'), findsOneWidget);
+      expect(find.text('Search Medicines'), findsOneWidget);
+    });
+
+    testWidgets('LiveOrderTrackingScreen renders 5-stage stepper when active order provided', (tester) async {
+      const sampleOrder = OrderItem(
+        id: 'GM-89421',
+        medicineName: 'Amoxyclav 625 Generic IP',
+        quantity: 2,
+        totalPrice: 147.0,
+        patientEmail: 'patient@example.com',
+        status: 'Out for Delivery',
+        deliveryAddress: 'Baner, Pune',
+      );
+      await tester.pumpWidget(_buildTestApp(const LiveOrderTrackingScreen(initialOrder: sampleOrder)));
       await tester.pumpAndSettle();
 
       expect(find.text('Order #GM-89421'), findsOneWidget);
       expect(find.text('Out for Delivery'), findsOneWidget);
-      expect(find.text('Ramesh Pawar'), findsOneWidget);
+      expect(find.text('Delivery Destination'), findsOneWidget);
+      expect(find.text('Baner, Pune'), findsAtLeastNWidgets(1));
     });
 
     testWidgets('PharmacyRegistrationScreen renders multi-step onboarding', (tester) async {

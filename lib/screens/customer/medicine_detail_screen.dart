@@ -1,3 +1,5 @@
+import '../../services/cart_service.dart';
+import 'cart_screen.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import 'cart_checkout_screen.dart';
@@ -21,6 +23,36 @@ class MedicineDetailScreen extends StatefulWidget {
 }
 
 class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
+  final CartService _cartService = const CartService();
+
+  Future<void> _addToCart() async {
+    try {
+      await _cartService.addToCart(
+        medicineId: widget.medicineName,
+        medicineName: widget.medicineName,
+        price: widget.genericPrice,
+        quantity: _quantity,
+      );
+    } catch (_) {}
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${widget.medicineName} added to cart!'),
+          backgroundColor: AppColors.primary,
+          action: SnackBarAction(
+            label: 'View Cart',
+            textColor: AppColors.secondaryFixed,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CartScreen()),
+              );
+            },
+          ),
+        ),
+      );
+    }
+  }
   int _quantity = 1;
   bool _isFavorite = false;
 
@@ -401,11 +433,11 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
                                   SizedBox(height: 2),
                                   Row(
                                     children: [
-                                      Icon(Icons.star, size: 14, color: AppColors.tertiary),
-                                      SizedBox(width: 2),
+                                      Icon(Icons.location_on_outlined, size: 14, color: AppColors.primary),
+                                      SizedBox(width: 4),
                                       Flexible(
                                         child: Text(
-                                          '4.8 (120 reviews) • 0.8 km away',
+                                          'Partner Pharmacy Network',
                                           style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -451,7 +483,7 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
                             Icon(Icons.electric_bolt, size: 18, color: AppColors.primary),
                             SizedBox(width: 6),
                             Text(
-                              'Delivers in 35 mins',
+                              'Same Day Delivery',
                               style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -530,6 +562,20 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
             ),
             const SizedBox(width: 20),
             Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _addToCart,
+                icon: const Icon(Icons.add_shopping_cart, size: 16),
+                label: const Text('Add to Cart', style: TextStyle(fontWeight: FontWeight.bold)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
               child: ElevatedButton.icon(
                 onPressed: () {
                   Navigator.push(
@@ -537,8 +583,8 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
                     MaterialPageRoute(builder: (_) => const CartCheckoutScreen()),
                   );
                 },
-                icon: const Icon(Icons.shopping_cart_checkout),
-                label: const Text('Buy Now / Checkout'),
+                icon: const Icon(Icons.flash_on, size: 16),
+                label: const Text('Buy Now', style: TextStyle(fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'auth_service.dart';
 import 'services/medicine_service.dart';
 import 'screens/inventory_screen.dart';
@@ -7,6 +8,7 @@ import 'theme/app_theme.dart';
 import 'screens/screen_showcase_sheet.dart';
 import 'screens/customer/customer_home_screen.dart';
 import 'screens/auth/interactive_login_screen.dart';
+import 'services/auth_routing_service.dart';
 
 // Supabase project credentials
 const String supabaseUrl = 'https://easjbvwjslirocrsobgt.supabase.co';
@@ -31,10 +33,14 @@ class CarePharmaApp extends StatelessWidget {
     super.key,
     this.authService,
     this.medicineService,
+    this.useDualRoleRouting = true,
+    this.initialHome,
   });
 
   final AuthService? authService;
   final IMedicineService? medicineService;
+  final bool useDualRoleRouting;
+  final Widget? initialHome;
 
   @override
   Widget build(BuildContext context) {
@@ -42,11 +48,94 @@ class CarePharmaApp extends StatelessWidget {
       title: 'CarePharma',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: RoleSelectionScreen(
-        authService: authService ?? const AuthService(),
-        medicineService: medicineService,
-      ),
+      home: initialHome ??
+          AppSessionGate(
+            authService: authService ?? const AuthService(),
+            medicineService: medicineService,
+            useDualRoleRouting: useDualRoleRouting,
+          ),
     );
+  }
+}
+
+/// Checks for an active Supabase session (Supabase.instance.client.auth.currentSession)
+/// on app startup. If present, bypasses the login screen and routes the user directly
+/// to their respective home screen or pharmacist admin dashboard.
+class AppSessionGate extends StatefulWidget {
+  const AppSessionGate({
+    super.key,
+    required this.authService,
+    this.medicineService,
+    this.useDualRoleRouting = true,
+  });
+
+  final AuthService authService;
+  final IMedicineService? medicineService;
+  final bool useDualRoleRouting;
+
+  @override
+  State<AppSessionGate> createState() => _AppSessionGateState();
+}
+
+class _AppSessionGateState extends State<AppSessionGate> {
+  late bool _isChecking = widget.useDualRoleRouting;
+  Widget? _resolvedHome;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.useDualRoleRouting) {
+      _checkSession();
+    }
+  }
+
+  Future<void> _checkSession() async {
+    try {
+      final session = Supabase.instance.client.auth.currentSession;
+      if (session != null && session.user.email != null) {
+        final routingService = AuthRoutingService(
+          authService: widget.authService,
+          medicineService: widget.medicineService,
+        );
+        final destination = await routingService.resolveDestinationScreen(
+          email: session.user.email,
+        );
+        if (mounted) {
+          setState(() {
+            _resolvedHome = destination;
+            _isChecking = false;
+          });
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('[AppSessionGate] No active session: $e');
+    }
+
+    if (mounted) {
+      setState(() {
+        _isChecking = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isChecking) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF8FAFC),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF00685F)),
+        ),
+      );
+    }
+
+    return _resolvedHome ??
+        RoleSelectionScreen(
+          authService: widget.authService,
+          medicineService: widget.medicineService,
+          useDualRoleRouting: widget.useDualRoleRouting,
+        );
   }
 }
 
@@ -56,10 +145,12 @@ class RoleSelectionScreen extends StatelessWidget {
     super.key,
     required this.authService,
     this.medicineService,
+    this.useDualRoleRouting = true,
   });
 
   final AuthService authService;
   final IMedicineService? medicineService;
+  final bool useDualRoleRouting;
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +183,10 @@ class RoleSelectionScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 32,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -115,10 +209,7 @@ class RoleSelectionScreen extends StatelessWidget {
                     const Text(
                       'Select an option to login with your email and OTP code.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF64748B),
-                      ),
+                      style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
                     ),
                     const SizedBox(height: 32),
 
@@ -135,6 +226,7 @@ class RoleSelectionScreen extends StatelessWidget {
                                 role: 'User',
                                 authService: authService,
                                 medicineService: medicineService,
+                                useDualRoleRouting: useDualRoleRouting,
                               ),
                             ),
                           );
@@ -142,7 +234,10 @@ class RoleSelectionScreen extends StatelessWidget {
                         icon: const Icon(Icons.person, size: 20),
                         label: const Text(
                           'Login as User',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0066CC),
@@ -168,6 +263,7 @@ class RoleSelectionScreen extends StatelessWidget {
                                 role: 'Pharmacist',
                                 authService: authService,
                                 medicineService: medicineService,
+                                useDualRoleRouting: useDualRoleRouting,
                               ),
                             ),
                           );
@@ -175,7 +271,10 @@ class RoleSelectionScreen extends StatelessWidget {
                         icon: const Icon(Icons.storefront, size: 20),
                         label: const Text(
                           'Login as Pharmacist',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF00AA44),
@@ -206,7 +305,10 @@ class RoleSelectionScreen extends StatelessWidget {
                         icon: const Icon(Icons.shopping_bag_outlined, size: 20),
                         label: const Text(
                           'Browse Customer App',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -231,7 +333,10 @@ class RoleSelectionScreen extends StatelessWidget {
                         icon: const Icon(Icons.security, size: 18),
                         label: const Text(
                           'Open Interactive Role Portal',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -243,7 +348,10 @@ class RoleSelectionScreen extends StatelessWidget {
                       icon: const Icon(Icons.grid_view, size: 16),
                       label: const Text(
                         'View All 12 Screens Directory',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -264,11 +372,13 @@ class LoginScreen extends StatefulWidget {
     required this.role,
     required this.authService,
     this.medicineService,
+    this.useDualRoleRouting = true,
   });
 
   final String role;
   final AuthService authService;
   final IMedicineService? medicineService;
+  final bool useDualRoleRouting;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -348,7 +458,17 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (response != null) {
-        if (widget.role == 'Pharmacist') {
+        if (widget.useDualRoleRouting) {
+          final routing = AuthRoutingService(
+            authService: widget.authService,
+            medicineService: widget.medicineService,
+          );
+          await routing.navigateAfterAuth(
+            context,
+            preferredRole: widget.role.toLowerCase(),
+            email: email,
+          );
+        } else if (widget.role == 'Pharmacist') {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -410,7 +530,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 32,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -720,7 +843,10 @@ class BlankSuccessScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 40,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -807,6 +933,3 @@ class BlankSuccessScreen extends StatelessWidget {
     );
   }
 }
-
-
-
