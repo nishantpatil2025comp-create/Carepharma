@@ -12,6 +12,9 @@ import 'package:carepharma/auth_service.dart';
 class MockCartService implements ICartService {
   final List<CartItem> items = [];
   bool checkoutCalled = false;
+  String? lastDeliveryAddress;
+  double? lastDeliveryLat;
+  double? lastDeliveryLng;
 
   MockCartService([List<CartItem>? initialItems]) {
     if (initialItems != null) {
@@ -26,6 +29,7 @@ class MockCartService implements ICartService {
     required double price,
     int quantity = 1,
     String? userEmail,
+    String? pharmacyUid,
   }) async {
     final idx = items.indexWhere((i) => i.medicineId == medicineId);
     if (idx != -1) {
@@ -40,6 +44,7 @@ class MockCartService implements ICartService {
           medicineName: medicineName,
           priceInr: price,
           quantity: quantity,
+          pharmacyUid: pharmacyUid,
           createdAt: DateTime.now(),
         ),
       );
@@ -80,8 +85,12 @@ class MockCartService implements ICartService {
     double? deliveryLat,
     double? deliveryLng,
     String? userEmail,
+    String? patientName,
   }) async {
     checkoutCalled = true;
+    lastDeliveryAddress = deliveryAddress;
+    lastDeliveryLat = deliveryLat;
+    lastDeliveryLng = deliveryLng;
     final createdOrders = <OrderItem>[];
     for (int i = 0; i < items.length; i++) {
       final item = items[i];
@@ -92,6 +101,7 @@ class MockCartService implements ICartService {
           quantity: item.quantity,
           totalPrice: item.totalPrice,
           patientEmail: userEmail ?? 'patient@carepharma.com',
+          patientName: patientName,
           status: 'Pending',
           createdAt: DateTime.now(),
           deliveryAddress: deliveryAddress,
@@ -349,8 +359,11 @@ void main() {
       expect(find.textContaining('Flat 402, Green Glen Layout'), findsOneWidget);
       expect(find.textContaining('Bangalore - 560103'), findsOneWidget);
 
-      // Check "Use GPS" button exists
-      expect(find.text('Use GPS'), findsOneWidget);
+      // Check "Use Current Location (GPS)" button exists
+      expect(find.text('Use Current Location (GPS)'), findsOneWidget);
+
+      // Check delivery address TextField exists
+      expect(find.byType(TextField), findsOneWidget);
 
       // Check Place Order Now button exists
       expect(find.text('Place Order Now'), findsOneWidget);
@@ -424,6 +437,47 @@ void main() {
 
       // Confirm checkout service was invoked
       expect(mockCart.checkoutCalled, isTrue);
+    });
+
+    testWidgets('Editing delivery address TextField updates address passed to checkout', (tester) async {
+      final mockCart = MockCartService([
+        CartItem(
+          id: 'item-1',
+          userEmail: 'rahul.patient@gmail.com',
+          medicineId: 'MED-1',
+          medicineName: 'Amoxicillin 500mg',
+          priceInr: 50.00,
+          quantity: 1,
+        ),
+      ]);
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          CartScreen(
+            cartService: mockCart,
+            authService: const MockUserAuthService(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Enter a new manual address
+      final addressField = find.byType(TextField);
+      expect(addressField, findsOneWidget);
+      await tester.enterText(addressField, '123 Baker Street, London (Custom Delivery)');
+      await tester.pumpAndSettle();
+
+      // Tap Place Order Now
+      await tester.tap(find.text('Place Order Now'));
+      await tester.pumpAndSettle();
+
+      // Expect confirmation dialog displaying the manual address
+      expect(find.text('Order Placed Successfully!'), findsOneWidget);
+      expect(find.textContaining('123 Baker Street, London (Custom Delivery)'), findsOneWidget);
+
+      // Confirm checkout service received the manually entered address
+      expect(mockCart.checkoutCalled, isTrue);
+      expect(mockCart.lastDeliveryAddress, '123 Baker Street, London (Custom Delivery)');
     });
   });
 }

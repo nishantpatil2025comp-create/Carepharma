@@ -7,6 +7,7 @@ class CartItem {
     required this.medicineName,
     required this.priceInr,
     this.quantity = 1,
+    this.pharmacyUid,
     this.createdAt,
   });
 
@@ -28,6 +29,9 @@ class CartItem {
   /// Quantity selected.
   final int quantity;
 
+  /// Fulfilling pharmacy UID.
+  final String? pharmacyUid;
+
   /// Timestamp when item was added to cart.
   final DateTime? createdAt;
 
@@ -45,6 +49,7 @@ class CartItem {
           ? double.tryParse(json['price_inr'].toString()) ?? 0.0
           : (json['price'] != null ? double.tryParse(json['price'].toString()) ?? 0.0 : 0.0),
       quantity: json['quantity'] != null ? int.tryParse(json['quantity'].toString()) ?? 1 : 1,
+      pharmacyUid: json['pharmacy_uid']?.toString(),
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'].toString()) : null,
     );
   }
@@ -58,6 +63,7 @@ class CartItem {
       'medicine_name': medicineName,
       'price_inr': priceInr,
       'quantity': quantity,
+      if (pharmacyUid != null && pharmacyUid!.isNotEmpty) 'pharmacy_uid': pharmacyUid,
     };
   }
 
@@ -69,6 +75,7 @@ class CartItem {
     String? medicineName,
     double? priceInr,
     int? quantity,
+    String? pharmacyUid,
     DateTime? createdAt,
   }) {
     return CartItem(
@@ -78,6 +85,7 @@ class CartItem {
       medicineName: medicineName ?? this.medicineName,
       priceInr: priceInr ?? this.priceInr,
       quantity: quantity ?? this.quantity,
+      pharmacyUid: pharmacyUid ?? this.pharmacyUid,
       createdAt: createdAt ?? this.createdAt,
     );
   }

@@ -576,7 +576,10 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
             onPressed: _hasUploadedFile && !_isSubmitting ? _submitPrescription : null,
             child: _isSubmitting
                 ? const CircularProgressIndicator(color: Colors.white)
-                : const Text('Submit for Pharmacist Review (15m SLA)'),
+                : const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('Submit for Pharmacist Review (15m SLA)'),
+                  ),
           ),
         ),
       ),

@@ -9,6 +9,7 @@ class Medicine {
     required this.manufacturer,
     required this.expiryDate,
     this.pharmacyUid,
+    this.pharmacyName,
     this.addedBy,
     this.genericSalt,
   });
@@ -36,6 +37,9 @@ class Medicine {
 
   /// Unique identifier of the pharmacy that owns this inventory record.
   final String? pharmacyUid;
+
+  /// Display name of the pharmacy fulfilling this medicine.
+  final String? pharmacyName;
 
   /// Audit field recording the user who created/modified this item.
   final String? addedBy;
@@ -84,6 +88,11 @@ class Medicine {
     final rawManufacturer = json['Manufacturer'] ?? json['manufacturer'] ?? '';
     final rawExpiry = json['Expiry_Date'] ?? json['expiry_date'] ?? json['expiry'] ?? '';
     final rawPharmacyUid = json['pharmacy_uid'] ?? json['Pharmacy_UID'] ?? json['pharmacy_id'];
+    final rawPharmacyName = json['pharmacy_name'] ??
+        json['Pharmacy_Name'] ??
+        (json['pharmacies'] is Map
+            ? (json['pharmacies']['Name'] ?? json['pharmacies']['name'])
+            : null);
     final rawAddedBy = json['added_by'] ?? json['Added_By'];
     final rawGenericSalt = json['generic_salt'] ?? json['Generic_Salt'] ?? json['salt_composition'];
 
@@ -96,6 +105,7 @@ class Medicine {
       manufacturer: rawManufacturer.toString(),
       expiryDate: rawExpiry.toString(),
       pharmacyUid: rawPharmacyUid?.toString(),
+      pharmacyName: rawPharmacyName?.toString(),
       addedBy: rawAddedBy?.toString(),
       genericSalt: rawGenericSalt?.toString(),
     );
@@ -142,6 +152,7 @@ class Medicine {
     String? manufacturer,
     String? expiryDate,
     String? pharmacyUid,
+    String? pharmacyName,
     String? addedBy,
     String? genericSalt,
   }) {
@@ -154,6 +165,7 @@ class Medicine {
       manufacturer: manufacturer ?? this.manufacturer,
       expiryDate: expiryDate ?? this.expiryDate,
       pharmacyUid: pharmacyUid ?? this.pharmacyUid,
+      pharmacyName: pharmacyName ?? this.pharmacyName,
       addedBy: addedBy ?? this.addedBy,
       genericSalt: genericSalt ?? this.genericSalt,
     );

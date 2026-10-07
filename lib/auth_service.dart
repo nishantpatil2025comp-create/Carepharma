@@ -172,20 +172,26 @@ class AuthService {
     }
 
     final client = _client;
-    if (client != null && targetUser != null && client.auth.currentUser != null && !targetUser.id.startsWith('mock') && !targetUser.id.startsWith('guest')) {
+    final currentAuth = client?.auth.currentUser;
+    final isGuest = currentAuth == null ||
+        targetUser == null ||
+        targetUser.id != currentAuth.id ||
+        targetUser.id.startsWith('mock') ||
+        targetUser.id.startsWith('guest');
+
+    if (client != null && !isGuest) {
       try {
         // Update user metadata
         await client.auth.updateUser(
           UserAttributes(data: {'role': cleanRole}),
         );
 
-        // Upsert into public.profiles
-        await client.from('profiles').upsert({
-          'id': targetUser.id,
-          'email': targetUser.email,
+        // Update role in public.profiles ONLY IF profile row already exists.
+        // Never auto-generate dummy profile rows on role setting or login.
+        await client.from('profiles').update({
           'role': cleanRole,
           'updated_at': DateTime.now().toIso8601String(),
-        });
+        }).eq('id', currentAuth.id);
       } catch (e) {
         debugPrint('[AuthService] Error persisting user role: $e');
       }
@@ -297,28 +303,66 @@ class AuthService {
   /// Saves or updates the user profile record in `public.profiles`.
   /// Anonymous / guest exploration remains local in-memory only without inserting dummy rows to Supabase.
   Future<void> saveUserProfile(UserProfile profile) async {
-    if (profile.email != null) {
-      _mockProfiles[profile.email!.toLowerCase()] = profile;
+    final cleanEmail = (profile.email ?? currentUserEmail)?.trim().toLowerCase();
+    if (cleanEmail != null && cleanEmail.isNotEmpty) {
+      _mockProfiles[cleanEmail] = profile;
     }
 
     final client = _client;
-    final isGuest = profile.id.startsWith('guest') ||
-        profile.id.startsWith('mock') ||
-        (client?.auth.currentUser == null);
+    final currentAuth = client?.auth.currentUser;
+    final targetEmail = cleanEmail ?? currentAuth?.email;
 
-    if (client != null && !isGuest && client.auth.currentUser != null) {
+    if (client != null) {
+      final updateData = <String, dynamic>{
+        'delivery_address': profile.deliveryAddress ?? '',
+        'address': profile.deliveryAddress ?? '',
+        if (profile.fullName != null && profile.fullName!.isNotEmpty)
+          'full_name': profile.fullName!.trim(),
+        if (profile.phone != null && profile.phone!.isNotEmpty)
+          'phone': profile.phone!.trim(),
+        if (profile.allergies != null)
+          'allergies': profile.allergies!.trim(),
+        if (profile.latitude != null)
+          'latitude': profile.latitude,
+        if (profile.longitude != null)
+          'longitude': profile.longitude,
+        'is_profile_completed': profile.isProfileCompleted,
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
       try {
-        await client.from('profiles').upsert(profile.toJson());
-        await client.auth.updateUser(
-          UserAttributes(data: {
-            'role': profile.role,
-            'full_name': profile.fullName,
-            'profile_completed': profile.isProfileCompleted,
-          }),
-        );
+        if (targetEmail != null && targetEmail.isNotEmpty) {
+          // Explicitly update profiles table targeting user's email
+          await client
+              .from('profiles')
+              .update(updateData)
+              .eq('email', targetEmail);
+        } else if (currentAuth?.id != null) {
+          await client
+              .from('profiles')
+              .update(updateData)
+              .eq('id', currentAuth!.id);
+        }
       } catch (e) {
-        debugPrint('[AuthService] Error saving user profile: $e');
-        rethrow;
+        debugPrint('[AuthService] Notice updating profile by email in Supabase: $e');
+        // Fallback upsert if row does not exist yet
+        try {
+          await client.from('profiles').upsert(profile.toJson());
+        } catch (inner) {
+          debugPrint('[AuthService] Fallback upsert notice: $inner');
+        }
+      }
+
+      if (currentAuth != null) {
+        try {
+          await client.auth.updateUser(
+            UserAttributes(data: {
+              'role': profile.role,
+              if (profile.fullName != null) 'full_name': profile.fullName,
+              'profile_completed': profile.isProfileCompleted,
+            }),
+          );
+        } catch (_) {}
       }
     }
   }

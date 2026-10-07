@@ -55,7 +55,8 @@ class FakeOrderService implements IOrderService {
   }
 
   @override
-  Future<List<OrderItem>> fetchOrdersForPatient(String patientEmail) async {
+  Future<List<OrderItem>> fetchOrdersForPatient([String? patientEmail]) async {
+    if (patientEmail == null) return orders;
     return orders.where((o) => o.patientEmail == patientEmail).toList();
   }
 

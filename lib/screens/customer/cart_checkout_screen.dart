@@ -25,7 +25,7 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
   final OrderService _orderService = const OrderService();
   String _recipientName = 'Customer';
   String _recipientPhone = '';
-  String _deliveryAddress = 'Loading address...';
+  final TextEditingController _addressController = TextEditingController();
   double? _deliveryLat;
   double? _deliveryLng;
   bool _isLocating = false;
@@ -35,6 +35,12 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
   void initState() {
     super.initState();
     _loadProfileAddress();
+  }
+
+  @override
+  void dispose() {
+    _addressController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadProfileAddress() async {
@@ -49,20 +55,20 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
             _recipientPhone = profile.phone!;
           }
           if (profile.deliveryAddress != null && profile.deliveryAddress!.isNotEmpty) {
-            _deliveryAddress = profile.deliveryAddress!;
+            _addressController.text = profile.deliveryAddress!;
           }
           _deliveryLat = profile.latitude;
           _deliveryLng = profile.longitude;
         });
       } else if (mounted) {
         setState(() {
-          _deliveryAddress = 'Baner, Pune (Default Hub)';
+          _addressController.text = '';
         });
       }
     } catch (_) {
       if (mounted) {
         setState(() {
-          _deliveryAddress = 'Baner, Pune (Default Hub)';
+          _addressController.text = '';
         });
       }
     }
@@ -128,15 +134,16 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
       }
 
       final nonNullPos = pos;
+      final lat = nonNullPos.latitude;
+      final lng = nonNullPos.longitude;
       if (mounted) {
         setState(() {
-          _deliveryLat = nonNullPos.latitude;
-          _deliveryLng = nonNullPos.longitude;
-          _deliveryAddress = 'GPS: ${nonNullPos.latitude.toStringAsFixed(4)}, ${nonNullPos.longitude.toStringAsFixed(4)}';
+          _deliveryLat = lat;
+          _deliveryLng = lng;
           _isLocating = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Delivery destination set to current GPS!')),
+          const SnackBar(content: Text('Delivery destination set to current GPS coordinates!')),
         );
       }
 
@@ -146,9 +153,11 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
           final existingProfile = await _authService.getUserProfile();
           if (existingProfile != null) {
             final updated = existingProfile.copyWith(
-              latitude: nonNullPos.latitude,
-              longitude: nonNullPos.longitude,
-              deliveryAddress: 'GPS: ${nonNullPos.latitude.toStringAsFixed(4)}, ${nonNullPos.longitude.toStringAsFixed(4)}',
+              latitude: lat,
+              longitude: lng,
+              deliveryAddress: _addressController.text.trim().isNotEmpty
+                  ? _addressController.text.trim()
+                  : existingProfile.deliveryAddress,
             );
             await _authService.saveUserProfile(updated);
           }
@@ -165,6 +174,22 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
   }
 
   Future<void> _placeOrder(double totalPayable) async {
+    final manualAddress = _addressController.text.trim();
+    if (manualAddress.isEmpty && _deliveryLat == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a delivery address or use current GPS location.')),
+      );
+      return;
+    }
+    final effectiveAddress = manualAddress.isNotEmpty
+        ? manualAddress
+        : (_deliveryLat != null && _deliveryLng != null
+            ? 'GPS Pin: ${_deliveryLat!.toStringAsFixed(4)}, ${_deliveryLng!.toStringAsFixed(4)}'
+            : 'Standard Delivery Destination');
+
+    final lat = _deliveryLat ?? 18.5204;
+    final lng = _deliveryLng ?? 73.8567;
+
     setState(() => _isPlacingOrder = true);
     try {
       final user = _authService.currentUser;
@@ -176,9 +201,9 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
         quantity: _item1Qty + _item2Qty + _item3Qty,
         totalPrice: totalPayable,
         patientEmail: email,
-        deliveryAddress: _deliveryAddress,
-        deliveryLatitude: _deliveryLat,
-        deliveryLongitude: _deliveryLng,
+        deliveryAddress: effectiveAddress,
+        deliveryLatitude: lat,
+        deliveryLongitude: lng,
         status: 'placed',
       );
 
@@ -408,33 +433,38 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 4,
                     children: [
-                      const Expanded(
-                        child: Row(
-                          children: [
-                            Icon(Icons.home, color: AppColors.primary, size: 20),
-                            SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                'Delivery Address',
-                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
+                      const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.home, color: AppColors.primary, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Delivery Address',
+                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                          ),
+                        ],
                       ),
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          TextButton.icon(
-                            onPressed: _isLocating ? null : _detectGpsLocation,
-                            icon: _isLocating
-                                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                                : const Icon(Icons.my_location, size: 16),
-                            label: const Text('Fetch GPS', style: TextStyle(fontSize: 12)),
-                          ),
+                          if (_deliveryLat != null && _deliveryLng != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.secondaryContainer.withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'GPS: ${_deliveryLat!.toStringAsFixed(3)}, ${_deliveryLng!.toStringAsFixed(3)}',
+                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primary),
+                              ),
+                            ),
                           TextButton(
                             onPressed: () {
                               Navigator.push(
@@ -442,46 +472,61 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                                 MaterialPageRoute(builder: (_) => const UserProfileScreen()),
                               ).then((_) => _loadProfileAddress());
                             },
-                            child: const Text('Edit', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            child: const Text('Profile', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                           ),
                         ],
                       ),
                     ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.place, color: AppColors.primary, size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(_deliveryLat != null ? 'GPS Verified' : 'Saved Address', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                                  const SizedBox(width: 6),
-                                  Text(_deliveryLat != null ? '(Live Device)' : '(Profile)', style: const TextStyle(fontSize: 11, color: AppColors.primary)),
-                                ],
-                              ),
-                              const SizedBox(height: 2),
-                              Text(_deliveryAddress, style: const TextStyle(fontSize: 13)),
-                              if (_recipientPhone.isNotEmpty || _recipientName != 'Customer') ...[
-                                const SizedBox(height: 4),
-                                Text('Recipient: $_recipientName ($_recipientPhone)', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ],
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _addressController,
+                    maxLines: 2,
+                    style: const TextStyle(fontSize: 13),
+                    decoration: InputDecoration(
+                      labelText: 'Delivery Address *',
+                      hintText: 'Enter street address, building, or use GPS below',
+                      hintStyle: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      prefixIcon: const Icon(Icons.place, color: AppColors.primary, size: 20),
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _isLocating ? null : _detectGpsLocation,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.4)),
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: _isLocating
+                          ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+                          : const Icon(Icons.my_location, size: 16),
+                      label: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          _isLocating ? 'Acquiring GPS...' : 'Use Current Location (GPS)',
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (_recipientPhone.isNotEmpty || _recipientName != 'Customer') ...[
+                    const SizedBox(height: 6),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        'Recipient: $_recipientName ($_recipientPhone)',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.onSurfaceVariant),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -672,7 +717,10 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
                     : const Icon(Icons.arrow_forward),
-                label: Text(_isPlacingOrder ? 'Processing...' : 'Place Order (Track Live)'),
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(_isPlacingOrder ? 'Processing...' : 'Place Order (Track Live)'),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -740,13 +788,20 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(6),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      storeTag,
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
                   ),
-                  child: Text(storeTag, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),

@@ -120,6 +120,8 @@ class _PharmacySelfDeliveryScreenState extends State<PharmacySelfDeliveryScreen>
                         child: Text(
                           _getStatusText(),
                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.onSecondaryContainer),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
                       ),
                       Container(
@@ -143,6 +145,8 @@ class _PharmacySelfDeliveryScreenState extends State<PharmacySelfDeliveryScreen>
                   const Text(
                     'Placed at 02:14 PM (18 mins ago) • Distance: 1.2 km (Baner High St)',
                     style: TextStyle(fontSize: 12, color: AppColors.outline),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 16),
 
@@ -191,9 +195,9 @@ class _PharmacySelfDeliveryScreenState extends State<PharmacySelfDeliveryScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Ramesh Pawar', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                            Text('Fleet ID: FL-04 • Two-Wheeler • Insulated Box', style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant)),
-                            Text('Rating 4.9 (420+ store deliveries)', style: TextStyle(fontSize: 11, color: AppColors.tertiary, fontWeight: FontWeight.w600)),
+                            Text('Ramesh Pawar', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            Text('Fleet ID: FL-04 • Two-Wheeler • Insulated Box', style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            Text('Rating 4.9 (420+ store deliveries)', style: TextStyle(fontSize: 11, color: AppColors.tertiary, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
                           ],
                         ),
                       ),
@@ -235,11 +239,11 @@ class _PharmacySelfDeliveryScreenState extends State<PharmacySelfDeliveryScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Aniket Mehta', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                            Text('Aniket Mehta', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                             SizedBox(height: 2),
-                            Text('Flat 402, Green Glen Apts, Baner High Street, Pune 411045', style: TextStyle(fontSize: 12)),
+                            Text('Flat 402, Green Glen Apts, Baner High Street, Pune 411045', style: TextStyle(fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
                             SizedBox(height: 2),
-                            Text('Phone: +91 98230 44129 (Customer Verified)', style: TextStyle(fontSize: 11, color: AppColors.outline)),
+                            Text('Phone: +91 98230 44129 (Customer Verified)', style: TextStyle(fontSize: 11, color: AppColors.outline), maxLines: 1, overflow: TextOverflow.ellipsis),
                           ],
                         ),
                       ),

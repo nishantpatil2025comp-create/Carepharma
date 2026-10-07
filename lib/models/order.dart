@@ -6,6 +6,7 @@ class OrderItem {
     required this.quantity,
     required this.totalPrice,
     required this.patientEmail,
+    this.patientName,
     this.deliveryAddress,
     this.deliveryLatitude,
     this.deliveryLongitude,
@@ -14,7 +15,7 @@ class OrderItem {
     this.createdAt,
   });
 
-  /// Unique order identifier (UUID).
+  /// Unique order identifier (UUID or order_id).
   final String id;
 
   /// Name of the ordered medicine.
@@ -29,6 +30,9 @@ class OrderItem {
   /// Email of the user/patient placing the order.
   final String patientEmail;
 
+  /// Real full name of the patient.
+  final String? patientName;
+
   /// Delivery address destination.
   final String? deliveryAddress;
 
@@ -41,7 +45,7 @@ class OrderItem {
   /// Fulfilling pharmacy UID.
   final String? pharmacyUid;
 
-  /// Order status ('Pending', 'Confirmed', 'Packed', 'Out for Delivery', 'Delivered').
+  /// Order status ('Pending', 'Verified', 'Packed', 'Dispatched', 'Delivered').
   final String status;
 
   /// Order placement timestamp.
@@ -69,27 +73,30 @@ class OrderItem {
     }
 
     return OrderItem(
-      id: (json['id'] ?? json['UID'] ?? '').toString(),
+      id: (json['order_id'] ?? json['Order_ID'] ?? json['UID'] ?? json['uid'] ?? json['id'] ?? '').toString(),
       medicineName: (json['medicine_name'] ?? json['name'] ?? 'Generic Medicine').toString(),
       quantity: parseInt(json['quantity']),
       totalPrice: parseDouble(json['total_price'] ?? json['price']),
-      patientEmail: (json['patient_email'] ?? json['email'] ?? '').toString(),
+      patientEmail: (json['patient_email'] ?? json['email'] ?? json['user_email'] ?? '').toString(),
+      patientName: (json['patient_name'] ?? json['full_name'] ?? json['profiles']?['full_name'])?.toString(),
       deliveryAddress: json['delivery_address']?.toString(),
       deliveryLatitude: json['delivery_latitude'] != null ? parseDouble(json['delivery_latitude']) : null,
       deliveryLongitude: json['delivery_longitude'] != null ? parseDouble(json['delivery_longitude']) : null,
-      pharmacyUid: json['pharmacy_uid']?.toString(),
+      pharmacyUid: (json['pharmacy_uid'] ?? json['pharmacy_id'])?.toString(),
       status: (json['status'] ?? 'Pending').toString(),
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'].toString()) : null,
     );
   }
 
   /// Serializes for Supabase insertion.
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson({bool includeOrderId = false}) {
     return {
+      if (includeOrderId && id.isNotEmpty) 'order_id': id,
       'medicine_name': medicineName,
       'quantity': quantity,
       'total_price': totalPrice,
       'patient_email': patientEmail,
+      if (patientName != null && patientName!.trim().isNotEmpty) 'patient_name': patientName!.trim(),
       if (deliveryAddress != null) 'delivery_address': deliveryAddress,
       if (deliveryLatitude != null) 'delivery_latitude': deliveryLatitude,
       if (deliveryLongitude != null) 'delivery_longitude': deliveryLongitude,
@@ -104,6 +111,7 @@ class OrderItem {
     int? quantity,
     double? totalPrice,
     String? patientEmail,
+    String? patientName,
     String? deliveryAddress,
     double? deliveryLatitude,
     double? deliveryLongitude,
@@ -117,6 +125,7 @@ class OrderItem {
       quantity: quantity ?? this.quantity,
       totalPrice: totalPrice ?? this.totalPrice,
       patientEmail: patientEmail ?? this.patientEmail,
+      patientName: patientName ?? this.patientName,
       deliveryAddress: deliveryAddress ?? this.deliveryAddress,
       deliveryLatitude: deliveryLatitude ?? this.deliveryLatitude,
       deliveryLongitude: deliveryLongitude ?? this.deliveryLongitude,

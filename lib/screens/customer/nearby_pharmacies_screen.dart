@@ -337,36 +337,44 @@ class _NearbyPharmaciesScreenState extends State<NearbyPharmaciesScreen> {
                                                     Text(
                                                       'Lic: ${store.license!}',
                                                       style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
                                                     ),
                                                 ],
                                               ),
                                             ),
-                                            const SizedBox(width: 10),
+                                            const SizedBox(width: 8),
                                             // Proximity Badge
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                              decoration: BoxDecoration(
-                                                color: isClosest ? const Color(0xFF00685F) : const Color(0xFFF1F5F9),
-                                                borderRadius: BorderRadius.circular(12),
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    Icons.near_me,
-                                                    size: 13,
-                                                    color: isClosest ? Colors.white : const Color(0xFF00685F),
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    store.formattedDistance,
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      fontWeight: FontWeight.bold,
+                                            Flexible(
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                                                decoration: BoxDecoration(
+                                                  color: isClosest ? const Color(0xFF00685F) : const Color(0xFFF1F5F9),
+                                                  borderRadius: BorderRadius.circular(12),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.near_me,
+                                                      size: 13,
                                                       color: isClosest ? Colors.white : const Color(0xFF00685F),
                                                     ),
-                                                  ),
-                                                ],
+                                                    const SizedBox(width: 4),
+                                                    Flexible(
+                                                      child: Text(
+                                                        store.formattedDistance,
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight: FontWeight.bold,
+                                                          color: isClosest ? Colors.white : const Color(0xFF00685F),
+                                                        ),
+                                                        overflow: TextOverflow.ellipsis,
+                                                        maxLines: 1,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
                                             ),
                                           ],

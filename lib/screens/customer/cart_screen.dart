@@ -39,10 +39,10 @@ class _CartScreenState extends State<CartScreen> {
   bool _isCheckingOut = false;
   bool _isLocating = false;
   List<CartItem> _cartItems = [];
-  String _deliveryAddress = 'Loading address...';
+  String _deliveryAddress = '';
+  final TextEditingController _addressController = TextEditingController();
   double? _deliveryLat;
   double? _deliveryLng;
-  bool _useCurrentGps = false;
 
   @override
   void initState() {
@@ -50,6 +50,12 @@ class _CartScreenState extends State<CartScreen> {
     _cartService = widget.cartService ?? const CartService();
     _authService = widget.authService ?? const AuthService();
     _fetchCartAndProfile();
+  }
+
+  @override
+  void dispose() {
+    _addressController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchCartAndProfile() async {
@@ -63,7 +69,7 @@ class _CartScreenState extends State<CartScreen> {
       final items = await _cartService.fetchCartItems(userEmail);
 
       // 2. Fetch User Profile Address from Supabase profiles table
-      String resolvedAddress = 'Baner, Pune (Default Hub)';
+      String resolvedAddress = '';
       final client = _supabase;
       if (client != null) {
         try {
@@ -104,6 +110,7 @@ class _CartScreenState extends State<CartScreen> {
         setState(() {
           _cartItems = items;
           _deliveryAddress = resolvedAddress;
+          _addressController.text = resolvedAddress;
           _isLoading = false;
         });
       }
@@ -180,13 +187,17 @@ class _CartScreenState extends State<CartScreen> {
       }
 
       final nonNullPos = pos;
+      final lat = nonNullPos.latitude;
+      final lng = nonNullPos.longitude;
       if (mounted) {
         setState(() {
-          _deliveryLat = nonNullPos.latitude;
-          _deliveryLng = nonNullPos.longitude;
-          _deliveryAddress =
-              'GPS Location: Lat ${nonNullPos.latitude.toStringAsFixed(4)}, Lon ${nonNullPos.longitude.toStringAsFixed(4)}';
-          _useCurrentGps = true;
+          _deliveryLat = lat;
+          _deliveryLng = lng;
+          // Keep manual street address strictly separate from live GPS coordinates!
+          // Do not overwrite user's typed street address in _addressController.
+          if (_addressController.text.trim().isEmpty) {
+            _deliveryAddress = 'GPS Pin: ${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)}';
+          }
           _isLocating = false;
         });
         messenger.showSnackBar(
@@ -200,9 +211,11 @@ class _CartScreenState extends State<CartScreen> {
           final existingProfile = await _authService.getUserProfile();
           if (existingProfile != null) {
             final updated = existingProfile.copyWith(
-              latitude: nonNullPos.latitude,
-              longitude: nonNullPos.longitude,
-              deliveryAddress: _deliveryAddress,
+              latitude: lat,
+              longitude: lng,
+              deliveryAddress: _addressController.text.trim().isNotEmpty
+                  ? _addressController.text.trim()
+                  : existingProfile.deliveryAddress,
             );
             await _authService.saveUserProfile(updated);
           }
@@ -230,12 +243,45 @@ class _CartScreenState extends State<CartScreen> {
   /// Handles checkout: loops through cart items, inserts into orders table, and clears cart.
   Future<void> _checkout() async {
     if (_cartItems.isEmpty) return;
+    final messenger = ScaffoldMessenger.of(context);
+
+    final manualAddress = _addressController.text.trim();
+    if (manualAddress.isEmpty && _deliveryLat == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Please enter a delivery address or use current GPS location.')),
+      );
+      return;
+    }
+
+    final effectiveAddress = manualAddress.isNotEmpty
+        ? manualAddress
+        : (_deliveryLat != null && _deliveryLng != null
+            ? 'GPS Pin: ${_deliveryLat!.toStringAsFixed(4)}, ${_deliveryLng!.toStringAsFixed(4)}'
+            : 'Standard Delivery Destination');
+    _deliveryAddress = effectiveAddress;
 
     final user = _authService.currentUser;
     final userEmail = user?.email ?? _authService.currentUserEmail ?? 'patient@carepharma.com';
+    String? patientName;
+    try {
+      final p = await _authService.getUserProfile(userId: user?.id, email: userEmail);
+      if (p != null && p.fullName != null && p.fullName!.trim().isNotEmpty) {
+        patientName = p.fullName!.trim();
+      }
+      if (_deliveryLat == null && p?.latitude != null) {
+        _deliveryLat = p!.latitude;
+      }
+      if (_deliveryLng == null && p?.longitude != null) {
+        _deliveryLng = p!.longitude;
+      }
+    } catch (_) {}
 
+    // Ensure GPS coordinates are non-null so they never save as NULL in Supabase
+    _deliveryLat ??= 18.5204;
+    _deliveryLng ??= 73.8567;
+
+    if (!mounted) return;
     setState(() => _isCheckingOut = true);
-    final messenger = ScaffoldMessenger.of(context);
 
     try {
       final itemsToOrder = List<CartItem>.from(_cartItems);
@@ -243,10 +289,11 @@ class _CartScreenState extends State<CartScreen> {
       // Perform checkout and insert orders into Supabase orders table
       final placedOrders = await _cartService.checkout(
         items: itemsToOrder,
-        deliveryAddress: _deliveryAddress,
+        deliveryAddress: effectiveAddress,
         deliveryLat: _deliveryLat,
         deliveryLng: _deliveryLng,
         userEmail: userEmail,
+        patientName: patientName,
       );
 
       if (mounted) {
@@ -564,39 +611,11 @@ class _CartScreenState extends State<CartScreen> {
                             elevation: 0,
                             child: Padding(
                               padding: const EdgeInsets.all(12),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: primaryColor.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: const Icon(Icons.medication, color: primaryColor, size: 24),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          item.medicineName,
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          '₹${item.priceInr.toStringAsFixed(2)} per unit',
-                                          style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  // Quantity Stepper
-                                  Container(
+                              child: LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final isCompact = constraints.maxWidth < 360;
+
+                                  final stepper = Container(
                                     decoration: BoxDecoration(
                                       border: Border.all(color: Colors.grey.shade300),
                                       borderRadius: BorderRadius.circular(8),
@@ -624,25 +643,116 @@ class _CartScreenState extends State<CartScreen> {
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  // Line total
-                                  Text(
+                                  );
+
+                                  final totalText = Text(
                                     '₹${item.totalPrice.toStringAsFixed(2)}',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
                                       color: primaryColor,
                                     ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.close, size: 18, color: Colors.grey),
-                                    visualDensity: VisualDensity.compact,
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-                                    onPressed: () => _removeItem(item),
-                                  ),
-                                ],
+                                  );
+
+                                  if (isCompact) {
+                                    return Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: primaryColor.withValues(alpha: 0.1),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: const Icon(Icons.medication, color: primaryColor, size: 20),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    item.medicineName,
+                                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                                    maxLines: 2,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  Text(
+                                                    '₹${item.priceInr.toStringAsFixed(2)} per unit',
+                                                    style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(Icons.close, size: 18, color: Colors.grey),
+                                              visualDensity: VisualDensity.compact,
+                                              padding: EdgeInsets.zero,
+                                              constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                                              onPressed: () => _removeItem(item),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            stepper,
+                                            totalText,
+                                          ],
+                                        ),
+                                      ],
+                                    );
+                                  }
+
+                                  return Row(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: primaryColor.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: const Icon(Icons.medication, color: primaryColor, size: 24),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              item.medicineName,
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '₹${item.priceInr.toStringAsFixed(2)} per unit',
+                                              style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      stepper,
+                                      const SizedBox(width: 8),
+                                      totalText,
+                                      IconButton(
+                                        icon: const Icon(Icons.close, size: 18, color: Colors.grey),
+                                        visualDensity: VisualDensity.compact,
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                                        onPressed: () => _removeItem(item),
+                                      ),
+                                    ],
+                                  );
+                                },
                               ),
                             ),
                           );
@@ -669,51 +779,109 @@ class _CartScreenState extends State<CartScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Delivery Address Section
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'Delivery Address:',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF191C1E)),
-                                ),
-                                TextButton.icon(
-                                  onPressed: _isLocating ? null : _fetchGpsAddress,
-                                  style: TextButton.styleFrom(
-                                    visualDensity: VisualDensity.compact,
-                                    foregroundColor: primaryColor,
-                                  ),
-                                  icon: _isLocating
-                                      ? const SizedBox(
-                                          width: 12,
-                                          height: 12,
-                                          child: CircularProgressIndicator(strokeWidth: 2, color: primaryColor),
-                                        )
-                                      : const Icon(Icons.my_location, size: 15),
-                                  label: const Text('Use GPS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                ),
-                              ],
-                            ),
+                            // Delivery Address Section with Manual TextField & GPS button
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF2F4F6),
-                                borderRadius: BorderRadius.circular(10),
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey.shade300),
                               ),
-                              child: Row(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(
-                                    _useCurrentGps ? Icons.gps_fixed : Icons.home_outlined,
-                                    size: 18,
-                                    color: primaryColor,
+                                  Wrap(
+                                    alignment: WrapAlignment.spaceBetween,
+                                    crossAxisAlignment: WrapCrossAlignment.center,
+                                    spacing: 8,
+                                    runSpacing: 4,
+                                    children: [
+                                      const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.location_on, size: 18, color: primaryColor),
+                                          SizedBox(width: 6),
+                                          Text(
+                                            'Delivery Address:',
+                                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF191C1E)),
+                                          ),
+                                        ],
+                                      ),
+                                      if (_deliveryLat != null && _deliveryLng != null)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFE6F4F1),
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.gps_fixed, size: 12, color: primaryColor),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                'GPS: ${_deliveryLat!.toStringAsFixed(4)}, ${_deliveryLng!.toStringAsFixed(4)}',
+                                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: primaryColor),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      _deliveryAddress,
-                                      style: const TextStyle(fontSize: 13, color: Color(0xFF191C1E)),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
+                                  const SizedBox(height: 8),
+                                  TextField(
+                                    controller: _addressController,
+                                    maxLines: 2,
+                                    style: const TextStyle(fontSize: 13, color: Color(0xFF191C1E)),
+                                    decoration: InputDecoration(
+                                      hintText: 'Enter complete street address, flat/door no, landmark...',
+                                      hintStyle: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: BorderSide(color: Colors.grey.shade300),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: BorderSide(color: Colors.grey.shade300),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: const BorderSide(color: primaryColor, width: 1.5),
+                                      ),
+                                    ),
+                                    onChanged: (val) {
+                                      _deliveryAddress = val;
+                                    },
+                                  ),
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      onPressed: _isLocating ? null : _fetchGpsAddress,
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: primaryColor,
+                                        side: BorderSide(color: primaryColor.withValues(alpha: 0.5)),
+                                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      ),
+                                      icon: _isLocating
+                                          ? const SizedBox(
+                                              width: 14,
+                                              height: 14,
+                                              child: CircularProgressIndicator(strokeWidth: 2, color: primaryColor),
+                                            )
+                                          : const Icon(Icons.my_location, size: 16),
+                                      label: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          _isLocating ? 'Acquiring GPS...' : 'Use Current Location (GPS)',
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -727,9 +895,11 @@ class _CartScreenState extends State<CartScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
-                                  'Total Amount:',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF191C1E)),
+                                const Flexible(
+                                  child: Text(
+                                    'Total Amount:',
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF191C1E)),
+                                  ),
                                 ),
                                 Text(
                                   '₹${totalPrice.toStringAsFixed(2)}',

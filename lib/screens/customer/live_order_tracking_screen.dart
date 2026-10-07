@@ -24,6 +24,7 @@ class LiveOrderTrackingScreen extends StatefulWidget {
 class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
   int _currentStep = 1; // 1: Placed, 2: Verified, 3: Packed, 4: Out for Delivery, 5: Delivered
   OrderItem? _order;
+  List<OrderItem> _orderHistory = [];
   bool _isLoading = true;
   bool _isDeliveryConfirmed = false;
   late final IOrderService _orderService;
@@ -35,23 +36,27 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
     _order = widget.initialOrder;
     if (_order != null) {
       _applyOrderStatus(_order!.status);
-      _isLoading = false;
-    } else {
-      _syncLiveOrder();
     }
+    _syncLiveOrder();
   }
 
   Future<void> _syncLiveOrder() async {
     setState(() => _isLoading = true);
     try {
-      final latest = await _orderService.fetchLatestOrderForPatient();
+      final orders = await _orderService.fetchOrdersForPatient();
       if (mounted) {
         setState(() {
-          _order = latest;
-          _isLoading = false;
-          if (latest != null) {
-            _applyOrderStatus(latest.status);
+          _orderHistory = orders;
+          if (_order == null && orders.isNotEmpty) {
+            _order = orders.first;
+          } else if (_order != null && orders.isNotEmpty) {
+            final match = orders.firstWhere((o) => o.id == _order!.id, orElse: () => _order!);
+            _order = match;
           }
+          if (_order != null) {
+            _applyOrderStatus(_order!.status);
+          }
+          _isLoading = false;
         });
       }
     } catch (_) {
@@ -354,16 +359,20 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
                           size: 22,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          _isDeliveryConfirmed || _order!.status.toLowerCase() == 'delivered & confirmed'
-                              ? 'Delivery Verified & Confirmed'
-                              : 'Delivery Confirmation Required',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: _isDeliveryConfirmed || _order!.status.toLowerCase() == 'delivered & confirmed'
-                                ? const Color(0xFF137333)
-                                : const Color(0xFFF57F17),
+                        Expanded(
+                          child: Text(
+                            _isDeliveryConfirmed || _order!.status.toLowerCase() == 'delivered & confirmed'
+                                ? 'Delivery Verified & Confirmed'
+                                : 'Delivery Confirmation Required',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: _isDeliveryConfirmed || _order!.status.toLowerCase() == 'delivered & confirmed'
+                                  ? const Color(0xFF137333)
+                                  : const Color(0xFFF57F17),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
                           ),
                         ),
                       ],
@@ -394,7 +403,10 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
                             }
                           },
                           icon: const Icon(Icons.check_circle_outline, size: 18),
-                          label: const Text('Confirm Delivery Received'),
+                          label: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text('Confirm Delivery Received'),
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF00685F),
                             foregroundColor: Colors.white,
@@ -427,9 +439,12 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
                     children: [
                       Icon(Icons.local_shipping_outlined, color: AppColors.primary, size: 20),
                       SizedBox(width: 8),
-                      Text(
-                        'Delivery Destination',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                      Expanded(
+                        child: Text(
+                          'Delivery Destination',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
@@ -437,12 +452,16 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
                   Text(
                     address,
                     style: const TextStyle(fontSize: 13, color: AppColors.onSurface, fontWeight: FontWeight.w500),
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   if (_order!.deliveryLatitude != null && _order!.deliveryLongitude != null) ...[
                     const SizedBox(height: 4),
                     Text(
                       'GPS Coordinates: ${_order!.deliveryLatitude!.toStringAsFixed(4)}, ${_order!.deliveryLongitude!.toStringAsFixed(4)}',
                       style: const TextStyle(fontSize: 11, color: AppColors.primary),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                   if (_order!.createdAt != null) ...[
@@ -450,6 +469,8 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
                     Text(
                       'Ordered on: ${_order!.createdAt!.toLocal().toString().split('.')[0]}',
                       style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ],
@@ -496,8 +517,268 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
                 ],
               ),
             ),
+
+            // ORDER HISTORY LIST SECTION
+            if (_orderHistory.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              _buildOrderHistorySection(),
+            ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildOrderHistorySection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(color: AppColors.shadowTeal, blurRadius: 10, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.history, color: AppColors.primary, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Order History',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              Text(
+                '${_orderHistory.length} orders total',
+                style: const TextStyle(fontSize: 12, color: AppColors.outline),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _orderHistory.length,
+            separatorBuilder: (_, _) => const Divider(height: 16),
+            itemBuilder: (context, index) {
+              final hist = _orderHistory[index];
+              final isCurrent = hist.id == _order?.id;
+              final shortId = hist.id.length > 8 ? hist.id.substring(0, 8).toUpperCase() : hist.id;
+
+              return InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () {
+                  setState(() {
+                    _order = hist;
+                    _applyOrderStatus(hist.status);
+                  });
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                  child: LayoutBuilder(
+                    builder: (context, itemConstraints) {
+                      final isCompact = itemConstraints.maxWidth < 280;
+                      if (isCompact) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: isCurrent ? AppColors.primaryFixed : AppColors.surfaceContainerHigh,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    isCurrent ? Icons.gps_fixed : Icons.receipt_long,
+                                    size: 16,
+                                    color: isCurrent ? AppColors.primary : AppColors.outline,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    '#$shortId',
+                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                ),
+                                if (isCurrent) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text(
+                                      'Tracking',
+                                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.primary),
+                                    ),
+                                  ),
+                                ],
+                                const Spacer(),
+                                Text(
+                                  '₹${hist.totalPrice.toStringAsFixed(2)}',
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    '${hist.medicineName} (x${hist.quantity}) • ${hist.formattedDate}',
+                                    style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(maxWidth: 120),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: hist.status.toLowerCase().contains('delivered')
+                                          ? const Color(0xFFE6F4EA)
+                                          : AppColors.secondaryContainer,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      hist.status.toUpperCase(),
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold,
+                                        color: hist.status.toLowerCase().contains('delivered')
+                                            ? const Color(0xFF137333)
+                                            : AppColors.onSecondaryContainer,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
+                      }
+                      return Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: isCurrent ? AppColors.primaryFixed : AppColors.surfaceContainerHigh,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isCurrent ? Icons.gps_fixed : Icons.receipt_long,
+                              size: 18,
+                              color: isCurrent ? AppColors.primary : AppColors.outline,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        '#$shortId',
+                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                    ),
+                                    if (isCurrent) ...[
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: const Text(
+                                          'Tracking',
+                                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.primary),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${hist.medicineName} (x${hist.quantity}) • ${hist.formattedDate}',
+                                  style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                '₹${hist.totalPrice.toStringAsFixed(2)}',
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary),
+                              ),
+                              const SizedBox(height: 2),
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 110),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: hist.status.toLowerCase().contains('delivered')
+                                        ? const Color(0xFFE6F4EA)
+                                        : AppColors.secondaryContainer,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    hist.status.toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                      color: hist.status.toLowerCase().contains('delivered')
+                                          ? const Color(0xFF137333)
+                                          : AppColors.onSecondaryContainer,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

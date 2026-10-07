@@ -451,15 +451,19 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppColors.secondaryFixed.withValues(alpha: 0.4),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Text(
-                          'In Stock',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondaryFixed.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Text(
+                            'In Stock',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
                         ),
                       ),
                     ],

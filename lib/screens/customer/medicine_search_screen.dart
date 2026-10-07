@@ -92,39 +92,62 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
         return;
       }
 
-      // Query Supabase medicines table matching strictly Name or Generic_Salt
+      // Query Supabase medicines table matching strictly "Name" or generic_salt
       dynamic response;
       try {
         response = await client
             .from('medicines')
             .select()
-            .or('Name.ilike.%$trimmed%,Generic_Salt.ilike.%$trimmed%')
-            .order('Name', ascending: true);
+            .or('"Name".ilike.%$trimmed%,generic_salt.ilike.%$trimmed%')
+            .order('"Name"', ascending: true);
       } catch (columnErr) {
-        debugPrint('[MedicineSearchScreen] First attempt note: $columnErr. Trying quoted identifiers.');
-        try {
-          response = await client
-              .from('medicines')
-              .select()
-              .or('"Name".ilike.%$trimmed%,"Generic_Salt".ilike.%$trimmed%')
-              .order('"Name"', ascending: true);
-        } catch (_) {
-          try {
-            response = await client
-                .from('medicines')
-                .select()
-                .or('"Name".ilike.%$trimmed%,"Generic_Salt".ilike.%$trimmed%');
-          } catch (_) {
-            response = await client
-                .from('medicines')
-                .select()
-                .or('Name.ilike.%$trimmed%,Generic_Salt.ilike.%$trimmed%');
-          }
-        }
+        debugPrint('[MedicineSearchScreen] Query note: $columnErr. Trying without order.');
+        response = await client
+            .from('medicines')
+            .select()
+            .or('"Name".ilike.%$trimmed%,generic_salt.ilike.%$trimmed%');
       }
 
       if (mounted) {
         final list = List<Map<String, dynamic>>.from(response as List<dynamic>);
+
+        // Query pharmacies table using pharmacy_uid to resolve pharmacy names
+        final pharmacyUids = list
+            .map((e) => (e['pharmacy_uid'] ?? e['Pharmacy_UID'])?.toString())
+            .where((id) => id != null && id.trim().isNotEmpty)
+            .toSet()
+            .toList();
+
+        final Map<String, String> pharmacyNames = {};
+        if (pharmacyUids.isNotEmpty) {
+          try {
+            final pharmRes = await client
+                .from('pharmacies')
+                .select('"UID", "Name"')
+                .inFilter('"UID"', pharmacyUids);
+            for (final p in pharmRes as List<dynamic>) {
+              final uid = (p['UID'] ?? p['uid'] ?? '').toString();
+              final name = (p['Name'] ?? p['name'] ?? '').toString();
+              if (uid.isNotEmpty && name.isNotEmpty) {
+                pharmacyNames[uid] = name;
+              }
+            }
+          } catch (err) {
+            debugPrint('[MedicineSearchScreen] Pharmacy lookup notice: $err');
+          }
+        }
+
+        for (final m in list) {
+          final pUid = (m['pharmacy_uid'] ?? m['Pharmacy_UID'])?.toString();
+          if (pUid != null && pharmacyNames.containsKey(pUid)) {
+            m['pharmacy_name'] = pharmacyNames[pUid];
+          } else if (m['pharmacies'] is Map && m['pharmacies']['Name'] != null) {
+            m['pharmacy_name'] = m['pharmacies']['Name'];
+          } else {
+            m['pharmacy_name'] = 'CarePharma Partner Pharmacy';
+          }
+        }
+
         list.sort((a, b) {
           final na = (a['Name'] ?? a['name'] ?? '').toString().toLowerCase();
           final nb = (b['Name'] ?? b['name'] ?? '').toString().toLowerCase();
@@ -147,17 +170,20 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
   }
 
   Future<void> _addToCart(Map<String, dynamic> med) async {
-    final name = (med['name'] ?? med['Name'] ?? 'Medicine').toString();
+    final name = (med['Name'] ?? med['name'] ?? 'Medicine').toString();
     final uid = (med['UID'] ?? med['uid'] ?? med['id'] ?? name).toString();
-    final price = (med['price_inr'] ?? med['Price_INR'] ?? 0.0) is num
-        ? (med['price_inr'] ?? med['Price_INR'] as num).toDouble()
-        : double.tryParse((med['price_inr'] ?? med['Price_INR']).toString()) ?? 0.0;
+    final pharmacyUid = (med['pharmacy_uid'] ?? med['Pharmacy_UID'])?.toString();
+    final rawPrice = med['Price_INR'] ?? med['price_inr'] ?? 0.0;
+    final price = rawPrice is num
+        ? rawPrice.toDouble()
+        : double.tryParse(rawPrice.toString()) ?? 0.0;
 
     try {
       await _cartService.addToCart(
         medicineId: uid,
         medicineName: name,
         price: price,
+        pharmacyUid: pharmacyUid,
       );
       if (mounted) {
         setState(() => _cartCount++);
@@ -344,9 +370,10 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
                             itemCount: searchResults.length,
                             itemBuilder: (context, index) {
                               final med = searchResults[index];
-                              final name = (med['name'] ?? med['Name'] ?? '').toString();
+                              final name = (med['Name'] ?? med['name'] ?? '').toString();
                               final salt = (med['generic_salt'] ?? med['Generic_Salt'] ?? 'N/A').toString();
-                              final priceNum = med['price_inr'] ?? med['Price_INR'] ?? 0;
+                              final pharmacyName = (med['pharmacy_name'] ?? med['Pharmacy_Name'] ?? 'CarePharma Partner Pharmacy').toString();
+                              final priceNum = med['Price_INR'] ?? med['price_inr'] ?? 0;
                               final price = priceNum is num ? priceNum.toDouble() : double.tryParse(priceNum.toString()) ?? 0.0;
                               final stock = med['Stock'] ?? med['stock'];
 
@@ -359,86 +386,146 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
                                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                                 child: Padding(
                                   padding: const EdgeInsets.all(12),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(10),
-                                        decoration: BoxDecoration(
-                                          color: Colors.teal.shade50,
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        child: const Icon(Icons.medication, color: Color(0xFF00685F), size: 24),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              name,
-                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              'Generic Salt: $salt',
-                                              style: TextStyle(fontSize: 12, color: Colors.teal.shade800, fontWeight: FontWeight.w500),
-                                            ),
-                                            if (stock != null) ...[
-                                              const SizedBox(height: 2),
-                                              Text(
-                                                'Stock: $stock units',
-                                                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                                              ),
-                                            ],
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                  child: LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      final isCompact = constraints.maxWidth < 390;
+
+                                      final detailsWidget = Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            '₹${price.toStringAsFixed(2)}',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xFF00685F),
-                                              fontSize: 16,
-                                            ),
+                                            name,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                           ),
-                                          const SizedBox(height: 6),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            'Generic Salt: $salt',
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(fontSize: 12, color: Colors.teal.shade800, fontWeight: FontWeight.w500),
+                                          ),
+                                          const SizedBox(height: 3),
                                           Row(
-                                            mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              ElevatedButton.icon(
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: const Color(0xFF00685F),
-                                                  foregroundColor: Colors.white,
-                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                  minimumSize: Size.zero,
-                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                              Icon(Icons.storefront, size: 13, color: Colors.teal.shade700),
+                                              const SizedBox(width: 3),
+                                              Expanded(
+                                                child: Text(
+                                                  pharmacyName,
+                                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.teal.shade900),
+                                                  overflow: TextOverflow.ellipsis,
                                                 ),
-                                                onPressed: () => _addToCart(med),
-                                                icon: const Icon(Icons.add_shopping_cart, size: 12),
-                                                label: const Text('Add to Cart', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                                               ),
-                                              const SizedBox(width: 4),
-                                              ElevatedButton(
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.teal.shade700,
-                                                  foregroundColor: Colors.white,
-                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                  minimumSize: Size.zero,
-                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                            ],
+                                          ),
+                                          if (stock != null) ...[
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              'Stock: $stock units',
+                                              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                            ),
+                                          ],
+                                        ],
+                                      );
+
+                                      final priceWidget = Text(
+                                        '₹${price.toStringAsFixed(2)}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF00685F),
+                                          fontSize: 16,
+                                        ),
+                                      );
+
+                                      final buttonsWidget = Wrap(
+                                        spacing: 6,
+                                        runSpacing: 4,
+                                        alignment: WrapAlignment.end,
+                                        crossAxisAlignment: WrapCrossAlignment.center,
+                                        children: [
+                                          ElevatedButton.icon(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(0xFF00685F),
+                                              foregroundColor: Colors.white,
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              minimumSize: Size.zero,
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                            ),
+                                            onPressed: () => _addToCart(med),
+                                            icon: const Icon(Icons.add_shopping_cart, size: 12),
+                                            label: const Text('Add to Cart', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                          ),
+                                          ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.teal.shade700,
+                                              foregroundColor: Colors.white,
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              minimumSize: Size.zero,
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                            ),
+                                            onPressed: () => showOrderDialog(context, med),
+                                            child: const Text('Order', style: TextStyle(fontSize: 11)),
+                                          ),
+                                        ],
+                                      );
+
+                                      if (isCompact) {
+                                        return Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.all(10),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.teal.shade50,
+                                                    borderRadius: BorderRadius.circular(10),
+                                                  ),
+                                                  child: const Icon(Icons.medication, color: Color(0xFF00685F), size: 24),
                                                 ),
-                                                onPressed: () => showOrderDialog(context, med),
-                                                child: const Text('Order', style: TextStyle(fontSize: 11)),
-                                              ),
+                                                const SizedBox(width: 12),
+                                                Expanded(child: detailsWidget),
+                                                const SizedBox(width: 8),
+                                                priceWidget,
+                                              ],
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Align(
+                                              alignment: Alignment.centerRight,
+                                              child: buttonsWidget,
+                                            ),
+                                          ],
+                                        );
+                                      }
+
+                                      return Row(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              color: Colors.teal.shade50,
+                                              borderRadius: BorderRadius.circular(10),
+                                            ),
+                                            child: const Icon(Icons.medication, color: Color(0xFF00685F), size: 24),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(child: detailsWidget),
+                                          const SizedBox(width: 8),
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                            children: [
+                                              priceWidget,
+                                              const SizedBox(height: 6),
+                                              buttonsWidget,
                                             ],
                                           ),
                                         ],
-                                      ),
-                                    ],
+                                      );
+                                    },
                                   ),
                                 ),
                               );

@@ -91,6 +91,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         medicineId: medicineModel?.uid ?? medicineName,
         medicineName: medicineName,
         price: medicineModel?.priceInr ?? price ?? 18.0,
+        pharmacyUid: medicineModel?.pharmacyUid,
       );
     } catch (_) {}
     if (mounted) {
@@ -431,7 +432,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                         : 'Dosage Form: ${med.type}',
                     manufacturer: med.manufacturer.isNotEmpty ? med.manufacturer : 'CarePharma Lab',
                     packSize: 'Standard Unit Strip',
-                    pharmacyName: 'CarePharma Partner Network',
+                    pharmacyName: med.pharmacyName ?? 'CarePharma Partner Pharmacy',
                     pharmacyDistance: 'Hyperlocal Store',
                     deliveryETA: 'Same Day Delivery',
                     price: med.priceInr,
@@ -602,16 +603,22 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             // Medicine title & composition
             Text(
               name,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.onSurface),
             ),
             const SizedBox(height: 2),
             Text(
               composition,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 13, color: AppColors.secondary, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 2),
             Text(
               'Mfr: $manufacturer • $packSize',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
             ),
             const SizedBox(height: 8),
@@ -654,77 +661,106 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             const Divider(height: 1),
             const SizedBox(height: 10),
 
-            // Price & Add to Cart Action
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
+            // Price & Add to Cart Action - Responsive LayoutBuilder prevents overflow on narrow screens
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isCompact = constraints.maxWidth < 390;
+
+                final priceColumn = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 6,
+                      children: [
+                        Text(
+                          '₹${price.toStringAsFixed(2)}',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
+                        ),
+                        Text(
+                          '₹${mrp.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.outline,
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'Save $savingsInr ($savingsPercent)',
+                      style: const TextStyle(fontSize: 11, color: AppColors.secondary, fontWeight: FontWeight.w600),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                );
+
+                final actionButtons = Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  alignment: WrapAlignment.end,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () => _addToCart(name, medicineModel: medicineModel, price: price),
+                      icon: const Icon(Icons.add_shopping_cart, size: 14),
+                      label: const Text('Add to Cart', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        minimumSize: Size.zero,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        showOrderDialog(
+                          context,
+                          medicineModel != null
+                              ? medicineModel.toJson()
+                              : {
+                                  'Name': name,
+                                  'Price_INR': price,
+                                  'generic_salt': composition,
+                                },
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.onPrimary,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        minimumSize: Size.zero,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('Order Now', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                );
+
+                if (isCompact) {
+                  return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Wrap(
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 6,
-                        children: [
-                          Text(
-                            '₹${price.toStringAsFixed(2)}',
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
-                          ),
-                          Text(
-                            '₹${mrp.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.outline,
-                              decoration: TextDecoration.lineThrough,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        'Save $savingsInr ($savingsPercent)',
-                        style: const TextStyle(fontSize: 11, color: AppColors.secondary, fontWeight: FontWeight.w600),
-                        overflow: TextOverflow.ellipsis,
+                      priceColumn,
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: actionButtons,
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton.icon(
-                  onPressed: () => _addToCart(name, medicineModel: medicineModel, price: price),
-                  icon: const Icon(Icons.add_shopping_cart, size: 14),
-                  label: const Text('Add to Cart', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    minimumSize: Size.zero,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                ElevatedButton(
-                  onPressed: () {
-                    showOrderDialog(
-                      context,
-                      medicineModel != null
-                          ? medicineModel.toJson()
-                          : {
-                              'name': name,
-                              'price_inr': price,
-                              'generic_salt': composition,
-                            },
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.onPrimary,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    minimumSize: Size.zero,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: const Text('Order Now', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                ),
-              ],
+                  );
+                }
+
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(child: priceColumn),
+                    const SizedBox(width: 8),
+                    actionButtons,
+                  ],
+                );
+              },
             ),
           ],
         ),

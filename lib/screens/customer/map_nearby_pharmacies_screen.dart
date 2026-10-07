@@ -394,15 +394,19 @@ class _MapNearbyPharmaciesScreenState extends State<MapNearbyPharmaciesScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.secondaryFixed.withValues(alpha: 0.4),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          selectedPharmacy['openStatus'] ?? 'Open Now',
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.onSecondaryFixed),
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondaryFixed.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            selectedPharmacy['openStatus'] ?? 'Open Now',
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.onSecondaryFixed),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
                         ),
                       ),
                     ],
@@ -428,64 +432,128 @@ class _MapNearbyPharmaciesScreenState extends State<MapNearbyPharmaciesScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Calling ${selectedPharmacy['name']}: ${selectedPharmacy['phone']}')),
-                          );
-                        },
-                        icon: const Icon(Icons.call, size: 16),
-                        label: const Text('Call'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          minimumSize: const Size(54, 42),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      OutlinedButton.icon(
-                        onPressed: () {
-                          final lat = selectedPharmacy['latitude'] as double?;
-                          final lon = selectedPharmacy['longitude'] as double?;
-                          if (lat != null && lon != null) {
-                            openGoogleMapsRoute(lat, lon);
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('GPS coordinates unavailable for this store')),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.directions, size: 16),
-                        label: const Text('Directions'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          minimumSize: const Size(60, 42),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => MedicineDetailScreen(
-                                  medicineName: 'Paracetamol IP 650mg (${selectedPharmacy['name']})',
-                                  genericPrice: 18.00,
-                                ),
+                  LayoutBuilder(
+                    builder: (context, btnConstraints) {
+                      final isCompact = btnConstraints.maxWidth < 280;
+                      if (isCompact) {
+                        return Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Calling ${selectedPharmacy['name']}: ${selectedPharmacy['phone']}')),
+                                );
+                              },
+                              icon: const Icon(Icons.call, size: 16),
+                              label: const FittedBox(fit: BoxFit.scaleDown, child: Text('Call')),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                minimumSize: Size.zero,
                               ),
-                            );
-                          },
-                          icon: const Icon(Icons.arrow_forward, size: 16),
-                          label: const Text('Stock'),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            minimumSize: const Size(80, 42),
+                            ),
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                final lat = selectedPharmacy['latitude'] as double?;
+                                final lon = selectedPharmacy['longitude'] as double?;
+                                if (lat != null && lon != null) {
+                                  openGoogleMapsRoute(lat, lon);
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('GPS coordinates unavailable for this store')),
+                                  );
+                                }
+                              },
+                              icon: const Icon(Icons.directions, size: 16),
+                              label: const FittedBox(fit: BoxFit.scaleDown, child: Text('Directions')),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                minimumSize: Size.zero,
+                              ),
+                            ),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => MedicineDetailScreen(
+                                      medicineName: 'Paracetamol IP 650mg (${selectedPharmacy['name']})',
+                                      genericPrice: 18.00,
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.arrow_forward, size: 16),
+                              label: const FittedBox(fit: BoxFit.scaleDown, child: Text('Stock')),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                minimumSize: Size.zero,
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                      return Row(
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Calling ${selectedPharmacy['name']}: ${selectedPharmacy['phone']}')),
+                              );
+                            },
+                            icon: const Icon(Icons.call, size: 16),
+                            label: const FittedBox(fit: BoxFit.scaleDown, child: Text('Call')),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              minimumSize: const Size(48, 40),
+                            ),
                           ),
-                        ),
-                      ),
-                    ],
+                          const SizedBox(width: 6),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              final lat = selectedPharmacy['latitude'] as double?;
+                              final lon = selectedPharmacy['longitude'] as double?;
+                              if (lat != null && lon != null) {
+                                openGoogleMapsRoute(lat, lon);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('GPS coordinates unavailable for this store')),
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.directions, size: 16),
+                            label: const FittedBox(fit: BoxFit.scaleDown, child: Text('Directions')),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              minimumSize: const Size(56, 40),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => MedicineDetailScreen(
+                                      medicineName: 'Paracetamol IP 650mg (${selectedPharmacy['name']})',
+                                      genericPrice: 18.00,
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.arrow_forward, size: 16),
+                              label: const FittedBox(fit: BoxFit.scaleDown, child: Text('Stock')),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                                minimumSize: const Size(60, 40),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),

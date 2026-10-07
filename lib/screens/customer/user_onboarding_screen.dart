@@ -27,8 +27,8 @@ class _UserOnboardingScreenState extends State<UserOnboardingScreen> {
 
   final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _addressController = TextEditingController(text: 'Flat 402, Green Glen Apts, Baner, Pune');
-  final _cityPinController = TextEditingController(text: 'Pune, 411045');
+  final _addressController = TextEditingController();
+  final _cityPinController = TextEditingController();
   final _healthNotesController = TextEditingController();
 
   bool _isLoading = false;
@@ -260,7 +260,10 @@ class _UserOnboardingScreenState extends State<UserOnboardingScreen> {
                         icon: _isLocating
                             ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                             : const Icon(Icons.my_location, size: 16),
-                        label: const Text('Fetch Current GPS Coordinates for Address'),
+                        label: const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text('Fetch Current GPS Coordinates for Address'),
+                        ),
                       ),
                       const SizedBox(height: 16),
 
@@ -303,7 +306,10 @@ class _UserOnboardingScreenState extends State<UserOnboardingScreen> {
                                 width: 20,
                                 child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                               )
-                            : const Text('Save Profile & Start Shopping', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                            : const FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text('Save Profile & Start Shopping', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                              ),
                       ),
                     ],
                   ),

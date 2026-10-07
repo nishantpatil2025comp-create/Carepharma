@@ -28,6 +28,7 @@ class MedicineService implements IMedicineService {
       manufacturer: 'Cipla Ltd',
       expiryDate: '2026-10-31',
       pharmacyUid: 'mock_pharmacy_uid',
+      pharmacyName: 'Apollo Meds & Wellness',
       genericSalt: 'Amoxicillin + Clavulanic Acid 625mg',
     ),
     const Medicine(
@@ -39,6 +40,7 @@ class MedicineService implements IMedicineService {
       manufacturer: 'Sun Pharma',
       expiryDate: '2025-12-31',
       pharmacyUid: 'mock_pharmacy_uid',
+      pharmacyName: 'Apollo Meds & Wellness',
       genericSalt: 'Metformin Hydrochloride 500mg',
     ),
     const Medicine(
@@ -50,6 +52,7 @@ class MedicineService implements IMedicineService {
       manufacturer: 'Pfizer',
       expiryDate: '2027-05-15',
       pharmacyUid: 'mock_pharmacy_uid',
+      pharmacyName: 'Apollo Meds & Wellness',
       genericSalt: 'Dextromethorphan Hydrobromide',
     ),
   ];
@@ -64,6 +67,7 @@ class MedicineService implements IMedicineService {
   }
 
   /// Resolves the pharmacy UID associated with the currently authenticated user.
+  /// Returns null if no registered pharmacy exists (does not create dummy stores).
   @override
   Future<String?> getPharmacyUid() async {
     final client = _client;
@@ -104,28 +108,11 @@ class MedicineService implements IMedicineService {
         }
       }
 
-      // 3. If no pharmacy exists for this pharmacist, auto-create one
-      try {
-        final newPharmacy = await client
-            .from('pharmacies')
-            .insert({
-              'Name': 'Apollo Meds & Wellness',
-              'Email': user.email,
-              'owner_id': user.id,
-            })
-            .select('UID')
-            .single();
-
-        return newPharmacy['UID']?.toString();
-      } catch (e) {
-        debugPrint('[MedicineService] Auto-provision pharmacy note: $e');
-      }
-
-      // Fallback to user ID if table schema uses direct user ID mapping
-      return user.id;
+      // No pharmacy registered for this user yet
+      return null;
     } catch (e) {
       debugPrint('[MedicineService] Error resolving pharmacy UID: $e');
-      return user.id;
+      return null;
     }
   }
 
@@ -198,41 +185,60 @@ class MedicineService implements IMedicineService {
     }
 
     try {
+      PostgrestFilterBuilder dbQuery = client.from('medicines').select('*');
+      if (trimmedQuery.isNotEmpty) {
+        dbQuery = dbQuery.or('"Name".ilike.%$trimmedQuery%,generic_salt.ilike.%$trimmedQuery%');
+      }
+      if (trimmedSalt.isNotEmpty) {
+        dbQuery = dbQuery.ilike('generic_salt', '%$trimmedSalt%');
+      }
+
       List<dynamic> response;
       try {
-        PostgrestFilterBuilder dbQuery = client.from('medicines').select('*');
-        if (trimmedQuery.isNotEmpty) {
-          dbQuery = dbQuery.or('Name.ilike.%$trimmedQuery%,Generic_Salt.ilike.%$trimmedQuery%');
-        }
-        if (trimmedSalt.isNotEmpty) {
-          dbQuery = dbQuery.ilike('Generic_Salt', '%$trimmedSalt%');
-        }
-        response = await dbQuery.order('Name', ascending: true);
+        response = await dbQuery.order('"Name"', ascending: true);
       } catch (_) {
+        response = await dbQuery;
+      }
+
+      final rawList = List<Map<String, dynamic>>.from(
+        response.map((item) => Map<String, dynamic>.from(item as Map)),
+      );
+
+      // Query pharmacies table using the medicines' pharmacy_uid to resolve pharmacy names
+      final pharmacyUids = rawList
+          .map((e) => (e['pharmacy_uid'] ?? e['Pharmacy_UID'])?.toString())
+          .where((id) => id != null && id.trim().isNotEmpty)
+          .toSet()
+          .toList();
+
+      final Map<String, String> pharmacyNames = {};
+      if (pharmacyUids.isNotEmpty) {
         try {
-          PostgrestFilterBuilder dbQuery = client.from('medicines').select('*');
-          if (trimmedQuery.isNotEmpty) {
-            dbQuery = dbQuery.or('"Name".ilike.%$trimmedQuery%,"Generic_Salt".ilike.%$trimmedQuery%');
+          final pharmRes = await client
+              .from('pharmacies')
+              .select('"UID", "Name"')
+              .inFilter('"UID"', pharmacyUids);
+          for (final p in pharmRes as List<dynamic>) {
+            final uid = (p['UID'] ?? p['uid'] ?? '').toString();
+            final name = (p['Name'] ?? p['name'] ?? '').toString();
+            if (uid.isNotEmpty && name.isNotEmpty) {
+              pharmacyNames[uid] = name;
+            }
           }
-          if (trimmedSalt.isNotEmpty) {
-            dbQuery = dbQuery.ilike('"Generic_Salt"', '%$trimmedSalt%');
-          }
-          response = await dbQuery.order('"Name"', ascending: true);
-        } catch (_) {
-          PostgrestFilterBuilder dbQuery = client.from('medicines').select('*');
-          if (trimmedQuery.isNotEmpty) {
-            dbQuery = dbQuery.or('Name.ilike.%$trimmedQuery%,Generic_Salt.ilike.%$trimmedQuery%');
-          }
-          if (trimmedSalt.isNotEmpty) {
-            dbQuery = dbQuery.ilike('Generic_Salt', '%$trimmedSalt%');
-          }
-          response = await dbQuery;
+        } catch (e) {
+          debugPrint('[MedicineService] Notice resolving pharmacy names: $e');
         }
       }
 
-      final result = response
-          .map((item) => Medicine.fromJson(Map<String, dynamic>.from(item as Map)))
-          .toList();
+      final result = rawList.map((item) {
+        final med = Medicine.fromJson(item);
+        final pUid = med.pharmacyUid;
+        final resolvedName = (pUid != null && pharmacyNames.containsKey(pUid))
+            ? pharmacyNames[pUid]
+            : (med.pharmacyName ?? 'CarePharma Partner Pharmacy');
+        return med.copyWith(pharmacyName: resolvedName);
+      }).toList();
+
       result.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
       return result;
     } catch (e) {
@@ -308,6 +314,12 @@ class MedicineService implements IMedicineService {
         'Manufacturer': medicine.manufacturer,
         'Expiry_Date': medicine.expiryDate,
       };
+      if (medicine.genericSalt != null && medicine.genericSalt!.isNotEmpty) {
+        payload['generic_salt'] = medicine.genericSalt;
+      }
+      if (medicine.pharmacyUid != null && medicine.pharmacyUid!.isNotEmpty) {
+        payload['pharmacy_uid'] = medicine.pharmacyUid;
+      }
 
       final dynamic response = await client
           .from('medicines')

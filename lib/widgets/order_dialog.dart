@@ -17,9 +17,10 @@ Future<void> showOrderDialog(
   final TextEditingController quantityController = TextEditingController(text: '1');
   final TextEditingController addressController = TextEditingController();
 
-  double pricePerUnit = (medicine['price_inr'] ?? medicine['price'] ?? 0).toDouble();
-  final String medicineName = (medicine['name'] ?? 'Generic Medicine').toString();
-  final String? pharmacyUid = medicine['added_by']?.toString() ?? medicine['pharmacy_uid']?.toString();
+  final rawPrice = medicine['Price_INR'] ?? medicine['price_inr'] ?? medicine['price'] ?? 0;
+  final double pricePerUnit = rawPrice is num ? rawPrice.toDouble() : (double.tryParse(rawPrice.toString()) ?? 0.0);
+  final String medicineName = (medicine['Name'] ?? medicine['name'] ?? 'Generic Medicine').toString();
+  final String? pharmacyUid = medicine['pharmacy_uid']?.toString() ?? medicine['added_by']?.toString();
 
   final effectiveAuth = authService ?? const AuthService();
   final effectiveOrderService = orderService ?? const OrderService();
@@ -158,7 +159,10 @@ Future<void> showOrderDialog(
                     icon: isLocating
                         ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.my_location, size: 16),
-                    label: const Text('Use Live GPS Location', style: TextStyle(fontSize: 12)),
+                    label: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('Use Current Location (GPS)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
                   ),
                   const SizedBox(height: 16),
 
@@ -172,7 +176,9 @@ Future<void> showOrderDialog(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Total Amount:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        const Flexible(
+                          child: Text('Total Amount:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        ),
                         Text(
                           '₹${totalPrice.toStringAsFixed(2)}',
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.teal.shade800),

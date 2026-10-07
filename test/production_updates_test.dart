@@ -18,6 +18,7 @@ import 'package:carepharma/screens/customer/search_results_screen.dart';
 import 'package:carepharma/screens/customer/medicine_detail_screen.dart';
 import 'package:carepharma/screens/customer/cart_checkout_screen.dart';
 import 'package:carepharma/screens/customer/cart_screen.dart';
+import 'package:carepharma/screens/customer/live_order_tracking_screen.dart';
 
 class MockTestCartService implements ICartService {
   @override
@@ -27,6 +28,7 @@ class MockTestCartService implements ICartService {
     required double price,
     int quantity = 1,
     String? userEmail,
+    String? pharmacyUid,
   }) async {}
 
   @override
@@ -57,6 +59,7 @@ class MockTestCartService implements ICartService {
     double? deliveryLat,
     double? deliveryLng,
     String? userEmail,
+    String? patientName,
   }) async => [];
 }
 
@@ -69,11 +72,11 @@ class TestOrderService implements IOrderService {
   @override
   Future<OrderItem> createOrder(OrderItem order) async => order;
   @override
-  Future<List<OrderItem>> fetchOrdersForPatient(String patientEmail) async => [];
+  Future<List<OrderItem>> fetchOrdersForPatient([String? patientEmail]) async => orders;
   @override
   Future<List<OrderItem>> fetchOrdersForPharmacy(String pharmacyUid) async => orders;
   @override
-  Future<OrderItem?> fetchLatestOrderForPatient([String? patientEmail]) async => null;
+  Future<OrderItem?> fetchLatestOrderForPatient([String? patientEmail]) async => orders.isNotEmpty ? orders.first : null;
   @override
   Future<void> updateOrderStatus(String orderId, String status) async {}
 }
@@ -202,18 +205,42 @@ void main() {
       expect(fromJson.longitude, equals(73.7868));
     });
 
-    test('Medicine model retains pharmacyUid and composition fields', () {
+    test('Medicine model serializes with exact casing matching Supabase schema', () {
       const med = Medicine(
         uid: 'MED-123',
         name: 'Paracetamol 650mg',
         priceInr: 18.0,
         type: 'Tablet',
         stock: 50,
-        genericSalt: 'Paracetamol',
+        genericSalt: 'Paracetamol IP',
         manufacturer: 'Cipla',
         expiryDate: '12/26',
+        pharmacyUid: 'pharm_123',
+        addedBy: 'pharm@test.com',
       );
-      expect(med.name, equals('Paracetamol 650mg'));
+      final json = med.toJson(includeUid: true);
+      expect(json['Name'], equals('Paracetamol 650mg'));
+      expect(json['generic_salt'], equals('Paracetamol IP'));
+      expect(json['Price_INR'], equals(18.0));
+      expect(json['Stock'], equals(50));
+      expect(json['UID'], equals('MED-123'));
+      expect(json['Type'], equals('Tablet'));
+      expect(json['Expiry_Date'], equals('12/26'));
+      expect(json['Manufacturer'], equals('Cipla'));
+      expect(json['pharmacy_uid'], equals('pharm_123'));
+      expect(json['added_by'], equals('pharm@test.com'));
+
+      final parsed = Medicine.fromJson(json);
+      expect(parsed.name, equals('Paracetamol 650mg'));
+      expect(parsed.genericSalt, equals('Paracetamol IP'));
+      expect(parsed.priceInr, equals(18.0));
+      expect(parsed.stock, equals(50));
+      expect(parsed.uid, equals('MED-123'));
+      expect(parsed.type, equals('Tablet'));
+      expect(parsed.manufacturer, equals('Cipla'));
+      expect(parsed.expiryDate, equals('12/26'));
+      expect(parsed.pharmacyUid, equals('pharm_123'));
+      expect(parsed.addedBy, equals('pharm@test.com'));
     });
   });
 
@@ -249,6 +276,120 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Cash on Delivery (Dummy COD)'), findsOneWidget);
+    });
+  });
+
+  group('Critical Production Bugfixes: Cart 404, Pharmacist Orders Tab, Order History, Guest Isolation', () {
+    test('CartService buffers locally and returns items when Supabase client is offline/missing', () async {
+      const service = CartService();
+      await service.addToCart(
+        medicineId: 'MED-OFFLINE-1',
+        medicineName: 'Azithromycin 500mg',
+        price: 95.0,
+        quantity: 2,
+        userEmail: 'offline.user@test.com',
+      );
+
+      final items = await service.fetchCartItems('offline.user@test.com');
+      expect(items, isNotEmpty);
+      expect(items.any((i) => i.medicineName == 'Azithromycin 500mg'), isTrue);
+      expect(items.first.totalPrice, equals(190.0));
+    });
+
+    testWidgets('InventoryScreen bottom nav includes Orders / Dispatch tab and renders incoming orders queue', (tester) async {
+      final sampleOrders = [
+        OrderItem(
+          id: 'ord-test-99',
+          medicineName: 'Paracetamol 650mg',
+          quantity: 2,
+          totalPrice: 36.0,
+          patientEmail: 'customer@test.com',
+          deliveryAddress: 'Baner High Street, Pune',
+          status: 'Pending',
+          createdAt: DateTime.now(),
+        ),
+      ];
+
+      await tester.pumpWidget(
+        _wrap(
+          InventoryScreen(
+            orderService: TestOrderService(sampleOrders),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify bottom nav tab exists
+      expect(find.text('Orders / Dispatch'), findsOneWidget);
+
+      // Tap on Orders / Dispatch tab (index 1)
+      await tester.tap(find.text('Orders / Dispatch'));
+      await tester.pumpAndSettle();
+
+      // Verify Orders view headers and metrics
+      expect(find.text('Orders & Dispatch Management'), findsOneWidget);
+      expect(find.text('Total Orders'), findsOneWidget);
+      expect(find.text('Pending Pack'), findsOneWidget);
+      expect(find.text('Start Packing'), findsOneWidget);
+      expect(find.textContaining('customer@test.com'), findsOneWidget);
+    });
+
+    testWidgets('LiveOrderTrackingScreen displays active order and order history list', (tester) async {
+      final sampleOrders = [
+        OrderItem(
+          id: 'ord-101',
+          medicineName: 'Amoxicillin 500mg',
+          quantity: 1,
+          totalPrice: 45.0,
+          patientEmail: 'patient@test.com',
+          status: 'Delivered',
+          createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+        ),
+        OrderItem(
+          id: 'ord-102',
+          medicineName: 'Paracetamol 650mg',
+          quantity: 2,
+          totalPrice: 36.0,
+          patientEmail: 'patient@test.com',
+          status: 'Dispatched',
+          createdAt: DateTime.now(),
+        ),
+      ];
+
+      final testOrderService = TestOrderService(sampleOrders);
+
+      await tester.pumpWidget(
+        _wrap(
+          LiveOrderTrackingScreen(
+            initialOrder: sampleOrders[1],
+            orderService: testOrderService,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Order History'), findsOneWidget);
+      expect(find.textContaining('Amoxicillin 500mg'), findsOneWidget);
+      expect(find.textContaining('Paracetamol 650mg'), findsNWidgets(2));
+    });
+
+    test('AuthService preserves guest profile locally without writing to Supabase', () async {
+      const auth = AuthService();
+      const guestProfile = UserProfile(
+        id: 'guest_session_123',
+        email: 'guest@visitor.local',
+        fullName: 'Guest User',
+        role: 'user',
+        deliveryAddress: 'Baner, Pune',
+      );
+
+      // Should save to in-memory mock profiles and succeed without error
+      await auth.saveUserProfile(guestProfile);
+
+      final fetched = await auth.getUserProfile(email: 'guest@visitor.local');
+      expect(fetched, isNotNull);
+      expect(fetched!.fullName, equals('Guest User'));
+      expect(fetched.id, equals('guest_session_123'));
     });
   });
 }

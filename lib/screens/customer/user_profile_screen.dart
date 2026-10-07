@@ -49,14 +49,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       if (mounted) {
         setState(() {
           _profile = p ?? UserProfile(
-            id: userId ?? 'guest_user',
-            email: email ?? 'patient@carepharma.com',
+            id: userId ?? '',
+            email: email ?? '',
             role: 'user',
-            fullName: 'CarePharma Patient',
-            phone: '+91 98000 00000',
-            deliveryAddress: 'Set your delivery address',
-            allergies: 'None recorded',
-            isProfileCompleted: true,
+            fullName: '',
+            phone: '',
+            deliveryAddress: '',
+            allergies: '',
+            isProfileCompleted: false,
           );
           _isLoading = false;
         });
@@ -214,7 +214,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                 if (pos != null) {
                                   fetchedLat = pos.latitude;
                                   fetchedLng = pos.longitude;
-                                  addressController.text = 'GPS Pin: ${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)} (Current Location)';
+                                  if (addressController.text.trim().isEmpty) {
+                                    addressController.text = 'GPS Pin: ${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)} (Current Location)';
+                                  }
                                 }
                               }
                             } catch (e) {
@@ -226,8 +228,32 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     icon: isLocating
                         ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.my_location, size: 16),
-                    label: const Text('Fetch Current GPS Coordinates for Address'),
+                    label: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('Fetch Current GPS Coordinates for Address'),
+                    ),
                   ),
+                  if (fetchedLat != null && fetchedLng != null) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.gps_fixed, size: 12, color: AppColors.primary),
+                          const SizedBox(width: 4),
+                          Text(
+                            'GPS Pin: ${fetchedLat!.toStringAsFixed(4)}, ${fetchedLng!.toStringAsFixed(4)}',
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 14),
                   TextField(
                     controller: allergiesController,
@@ -334,7 +360,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     child: Text(
                       (profile?.fullName?.isNotEmpty == true)
                           ? profile!.fullName![0].toUpperCase()
-                          : 'U',
+                          : (profile?.email?.isNotEmpty == true ? profile!.email![0].toUpperCase() : 'U'),
                       style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primary),
                     ),
                   ),
@@ -344,14 +370,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          profile?.fullName ?? 'CareWell Patient',
+                          (profile?.fullName?.isNotEmpty == true)
+                              ? profile!.fullName!
+                              : (profile?.email?.isNotEmpty == true ? profile!.email! : 'User Profile'),
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          profile?.email ?? 'patient@carepharma.com',
+                          (profile?.email?.isNotEmpty == true) ? profile!.email! : 'No email linked',
                           style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -414,6 +442,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     subtitle: Text(
                       profile?.deliveryAddress?.isNotEmpty == true ? profile!.deliveryAddress! : 'No address saved',
                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.outline),
                     onTap: _openEditProfileDialog,
@@ -425,6 +455,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     subtitle: Text(
                       profile?.allergies?.isNotEmpty == true ? profile!.allergies! : 'None recorded (Safe)',
                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.outline),
                     onTap: _openEditProfileDialog,

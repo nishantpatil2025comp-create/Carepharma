@@ -22,6 +22,7 @@ class MockCartServiceForTest implements ICartService {
     required double price,
     int quantity = 1,
     String? userEmail,
+    String? pharmacyUid,
   }) async {
     _items.add(CartItem(
       id: 'cart-1',
@@ -30,6 +31,7 @@ class MockCartServiceForTest implements ICartService {
       medicineName: medicineName,
       priceInr: price,
       quantity: quantity,
+      pharmacyUid: pharmacyUid,
       createdAt: DateTime.now(),
     ));
   }
@@ -54,6 +56,7 @@ class MockCartServiceForTest implements ICartService {
     double? deliveryLat,
     double? deliveryLng,
     String? userEmail,
+    String? patientName,
   }) async => [];
 }
 

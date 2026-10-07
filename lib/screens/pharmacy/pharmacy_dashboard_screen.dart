@@ -287,45 +287,67 @@ class _PharmacyDashboardScreenState extends State<PharmacyDashboardScreen> {
                     const SizedBox(height: 20),
 
                     // QUICK NAVIGATION TABS TO INVENTORY & DELIVERY
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const PharmacyInventoryScreen()),
-                              );
-                            },
-                            icon: const Icon(Icons.inventory_2),
-                            label: const Text('Manage Stock Catalog'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.surfaceContainerLowest,
-                              foregroundColor: AppColors.primary,
-                              side: const BorderSide(color: AppColors.primary),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isCompact = constraints.maxWidth < 380;
+                        final stockBtn = ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const PharmacyInventoryScreen()),
+                            );
+                          },
+                          icon: const Icon(Icons.inventory_2),
+                          label: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text('Manage Stock Catalog'),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const PharmacySelfDeliveryScreen()),
-                              );
-                            },
-                            icon: const Icon(Icons.local_shipping),
-                            label: const Text('Self-Fleet Dispatch'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.surfaceContainerLowest,
+                            foregroundColor: AppColors.primary,
+                            side: const BorderSide(color: AppColors.primary),
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                           ),
-                        ),
-                      ],
+                        );
+
+                        final dispatchBtn = ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const PharmacySelfDeliveryScreen()),
+                            );
+                          },
+                          icon: const Icon(Icons.local_shipping),
+                          label: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text('Self-Fleet Dispatch'),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                          ),
+                        );
+
+                        if (isCompact) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              stockBtn,
+                              const SizedBox(height: 8),
+                              dispatchBtn,
+                            ],
+                          );
+                        }
+
+                        return Row(
+                          children: [
+                            Expanded(child: stockBtn),
+                            const SizedBox(width: 12),
+                            Expanded(child: dispatchBtn),
+                          ],
+                        );
+                      },
                     ),
                     const SizedBox(height: 24),
 
@@ -465,7 +487,11 @@ class _PharmacyDashboardScreenState extends State<PharmacyDashboardScreen> {
               Icon(icon, size: 18, color: color),
             ],
           ),
-          Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+          ),
           Text(subtext, style: const TextStyle(fontSize: 10, color: AppColors.outline), overflow: TextOverflow.ellipsis),
         ],
       ),
@@ -512,22 +538,27 @@ class _PharmacyDashboardScreenState extends State<PharmacyDashboardScreen> {
                 ),
               ),
               const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: currentStatus.toLowerCase() == 'delivered'
-                      ? const Color(0xFFE6F4EA)
-                      : AppColors.secondaryContainer,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  currentStatus.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 130),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
                     color: currentStatus.toLowerCase() == 'delivered'
-                        ? const Color(0xFF137333)
-                        : AppColors.onSecondaryContainer,
+                        ? const Color(0xFFE6F4EA)
+                        : AppColors.secondaryContainer,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    currentStatus.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: currentStatus.toLowerCase() == 'delivered'
+                          ? const Color(0xFF137333)
+                          : AppColors.onSecondaryContainer,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
               ),
@@ -535,36 +566,42 @@ class _PharmacyDashboardScreenState extends State<PharmacyDashboardScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            order.patientEmail,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            (order.patientName != null && order.patientName!.trim().isNotEmpty)
+                ? (order.patientEmail.trim().isNotEmpty
+                    ? '${order.patientName!.trim()} (${order.patientEmail.trim()})'
+                    : order.patientName!.trim())
+                : (order.patientEmail.trim().isNotEmpty ? order.patientEmail.trim() : 'Patient (Pending)'),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             overflow: TextOverflow.ellipsis,
           ),
-          if (order.deliveryAddress != null && order.deliveryAddress!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                'Destination: ${order.deliveryAddress}',
-                style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
-                overflow: TextOverflow.ellipsis,
-              ),
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              'Destination: ${(order.deliveryAddress != null && order.deliveryAddress!.trim().isNotEmpty) ? order.deliveryAddress!.trim() : 'No delivery address specified'}',
+              style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
             ),
+          ),
           const SizedBox(height: 4),
           Text(
-            '${order.medicineName} x${order.quantity}',
+            '${order.medicineName.trim().isNotEmpty ? order.medicineName.trim() : 'Medicine'} x${order.quantity}',
             style: const TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600),
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 10),
 
           // Lifecycle phase progression and total
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 6,
             children: [
               Text(
                 '₹${order.totalPrice.toStringAsFixed(2)}',
                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary),
               ),
-              const SizedBox(width: 8),
 
               // Phase dropdown selector
               Container(

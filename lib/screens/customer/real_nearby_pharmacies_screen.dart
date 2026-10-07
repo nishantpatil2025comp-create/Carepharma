@@ -285,70 +285,99 @@ class _RealNearbyPharmaciesScreenState extends State<RealNearbyPharmaciesScreen>
                         side: BorderSide(color: Colors.grey.shade200),
                       ),
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.all(14),
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.teal.shade50,
-                          child: Icon(Icons.local_pharmacy, color: Colors.teal.shade700),
-                        ),
-                        title: Text(
-                          name,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                        ),
-                        subtitle: Column(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(height: 4),
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(Icons.location_on, size: 14, color: Colors.grey),
-                                const SizedBox(width: 4),
+                                CircleAvatar(
+                                  radius: 18,
+                                  backgroundColor: Colors.teal.shade50,
+                                  child: Icon(Icons.local_pharmacy, color: Colors.teal.shade700, size: 20),
+                                ),
+                                const SizedBox(width: 10),
                                 Expanded(
-                                  child: Text(
-                                    location,
-                                    style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
-                                    overflow: TextOverflow.ellipsis,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        name,
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                              location,
+                                              style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      if (phone.isNotEmpty) ...[
+                                        const SizedBox(height: 3),
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.phone, size: 14, color: Colors.grey),
+                                            const SizedBox(width: 4),
+                                            Expanded(
+                                              child: Text(
+                                                phone,
+                                                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
-                            if (phone.isNotEmpty) ...[
-                              const SizedBox(height: 2),
-                              Row(
-                                children: [
-                                  const Icon(Icons.phone, size: 14, color: Colors.grey),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    phone,
-                                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              alignment: WrapAlignment.spaceBetween,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 8,
+                              runSpacing: 6,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.teal.shade50,
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                ],
-                              ),
-                            ],
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.teal.shade50,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                distStr,
-                                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.teal.shade800, fontSize: 12),
-                              ),
+                                  child: Text(
+                                    distStr,
+                                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.teal.shade800, fontSize: 12),
+                                  ),
+                                ),
+                                if (lat != null && lng != null)
+                                  OutlinedButton.icon(
+                                    icon: const Icon(Icons.directions, color: AppColors.primary, size: 16),
+                                    label: const Text('Directions', style: TextStyle(fontSize: 12)),
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      minimumSize: Size.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    onPressed: () => openGoogleMapsRoute(lat, lng),
+                                  ),
+                              ],
                             ),
-                            if (lat != null && lng != null) ...[
-                              const SizedBox(width: 4),
-                              IconButton(
-                                icon: const Icon(Icons.directions, color: AppColors.primary, size: 22),
-                                tooltip: 'Get Directions',
-                                onPressed: () => openGoogleMapsRoute(lat, lng),
-                              ),
-                            ],
                           ],
                         ),
                       ),
